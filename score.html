@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>AS2 Score-Eingabe</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+      background: linear-gradient(135deg, #0b0e13 0%, #1a1f2e 100%);
+      color: #e8eef5;
+      min-height: 100vh;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      -webkit-font-smoothing: antialiased;
+    }
+    .container {
+      width: 100%;
+      max-width: 500px;
+      background: #13161a;
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid #00dca6;
+    }
+    .header h1 {
+      font-size: 24px;
+      color: #00dca6;
+      margin-bottom: 8px;
+    }
+    .board-info {
+      font-size: 16px;
+      color: #9fb0c3;
+      font-weight: 600;
+    }
+    .section {
+      margin-bottom: 24px;
+    }
+    .section-title {
+      font-size: 14px;
+      color: #9fb0c3;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+    .input-group {
+      margin-bottom: 16px;
+    }
+    input[type="text"], input[type="password"], select {
+      width: 100%;
+      padding: 14px 16px;
+      font-size: 16px;
+      border: 2px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.05);
+      color: #e8eef5;
+      transition: all 0.2s;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: #00dca6;
+      background: rgba(255,255,255,0.08);
+    }
+    select {
+      cursor: pointer;
+    }
+    .score-buttons {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .score-btn {
+      padding: 20px;
+      font-size: 24px;
+      font-weight: 800;
+      border: 2px solid rgba(255,255,255,0.2);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.05);
+      color: #e8eef5;
+      cursor: pointer;
+      transition: all 0.2s;
+      min-height: 70px;
+    }
+    .score-btn:active {
+      transform: scale(0.95);
+    }
+    .score-btn.selected {
+      background: #00dca6;
+      border-color: #00dca6;
+      color: #0b0e13;
+    }
+    .team-section {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .team-name {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: #00dca6;
+    }
+    .submit-btn {
+      width: 100%;
+      padding: 18px;
+      font-size: 18px;
+      font-weight: 700;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #00dca6 0%, #00b894 100%);
+      color: #0b0e13;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 12px rgba(0,220,166,0.3);
+    }
+    .submit-btn:active {
+      transform: scale(0.98);
+    }
+    .submit-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .message {
+      padding: 16px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+      font-size: 14px;
+      font-weight: 600;
+      text-align: center;
+    }
+    .message.success {
+      background: rgba(0,220,166,0.2);
+      border: 2px solid #00dca6;
+      color: #00dca6;
+    }
+    .message.error {
+      background: rgba(255,97,97,0.2);
+      border: 2px solid #ff6161;
+      color: #ff6161;
+    }
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 20px;
+      color: #9fb0c3;
+    }
+    .loading.active {
+      display: block;
+    }
+    .spinner {
+      border: 3px solid rgba(255,255,255,0.1);
+      border-top: 3px solid #00dca6;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 12px;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .hidden {
+      display: none !important;
+    }
+    .legs-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .legs-btn {
+      padding: 16px;
+      font-size: 20px;
+      font-weight: 700;
+      border: 2px solid rgba(255,255,255,0.2);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.05);
+      color: #e8eef5;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .legs-btn.selected {
+      background: #00dca6;
+      border-color: #00dca6;
+      color: #0b0e13;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🎯 AS2 Score-Eingabe</h1>
+      <div class="board-info" id="boardInfo">Board: –</div>
+    </div>
+
+    <div id="messageBox"></div>
+    
+    <div id="loadingBox" class="loading">
+      <div class="spinner"></div>
+      <div>Lädt...</div>
+    </div>
+
+    <!-- PIN Eingabe -->
+    <div id="pinSection" class="section">
+      <div class="section-title">Board PIN</div>
+      <input type="password" id="pinInput" placeholder="PIN eingeben" maxlength="6" autocomplete="off">
+      <button class="submit-btn" style="margin-top: 16px;" onclick="validatePIN()">Weiter</button>
+    </div>
+
+    <!-- Vorrunde -->
+    <div id="vorrundeSection" class="section hidden">
+      <div class="section-title">Vorrunde</div>
+      <div class="input-group">
+        <select id="teamSelect">
+          <option value="">Team auswählen...</option>
+        </select>
+      </div>
+      <div class="section-title" style="margin-top: 20px;">Legs erzielt</div>
+      <div class="legs-grid" id="legsGrid"></div>
+      <button class="submit-btn" style="margin-top: 20px;" onclick="saveVorrunde()" id="saveVorrundeBtn">✅ Score eintragen</button>
+    </div>
+
+    <!-- Hauptrunde -->
+    <div id="hauptrundeSection" class="section hidden">
+      <div class="section-title">Match</div>
+      <div id="matchInfo" style="padding: 16px; background: rgba(255,255,255,0.03); border-radius: 12px; margin-bottom: 20px; text-align: center; font-size: 16px; font-weight: 600;">
+        Lädt Match...
+      </div>
+
+      <div id="team1Section" class="team-section hidden">
+        <div class="team-name" id="team1Name">Team 1</div>
+        <div class="score-buttons" id="team1Buttons"></div>
+      </div>
+
+      <div id="team2Section" class="team-section hidden">
+        <div class="team-name" id="team2Name">Team 2</div>
+        <div class="score-buttons" id="team2Buttons"></div>
+      </div>
+
+      <button class="submit-btn hidden" id="saveHauptrundeBtn" onclick="saveHauptrunde()">✅ Score eintragen</button>
+    </div>
+  </div>
+
+  <script>
+    // Config
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz9pq4Wz2dSCcPwTZ8uo5ymrR9WtCsnzxkZWs6aCV-XN2ElWAdXkrn52gVe9T9Gs0jTow/exec';
+    
+    // State
+    let board = '';
+    let pin = '';
+    let phase = ''; // 'vorrunde' or 'hauptrunde'
+    let currentMatch = null;
+    let selectedLegs = null;
+    let selectedTeam1 = null;
+    let selectedTeam2 = null;
+
+    // Init
+    function init() {
+      const params = new URLSearchParams(window.location.search);
+      board = params.get('board') || 'M1';
+      document.getElementById('boardInfo').textContent = `Board: ${board}`;
+      
+      // Check for saved PIN
+      const savedPIN = localStorage.getItem(`pin_${board}`);
+      if (savedPIN) {
+        document.getElementById('pinInput').value = savedPIN;
+      }
+    }
+
+    // Show message
+    function showMessage(text, type = 'success') {
+      const box = document.getElementById('messageBox');
+      box.innerHTML = `<div class="message ${type}">${text}</div>`;
+      setTimeout(() => { box.innerHTML = ''; }, 5000);
+    }
+
+    // Validate PIN and load phase
+    async function validatePIN() {
+      pin = document.getElementById('pinInput').value.trim();
+      if (!pin) {
+        showMessage('Bitte PIN eingeben', 'error');
+        return;
+      }
+
+      showLoading(true);
+      
+      try {
+        const response = await fetch(`${SCRIPT_URL}?action=checkPIN&board=${board}&pin=${pin}`);
+        const data = await response.json();
+        
+        if (!data.ok) {
+          showMessage(data.msg || 'Falscher PIN', 'error');
+          showLoading(false);
+          return;
+        }
+
+        // Save PIN
+        localStorage.setItem(`pin_${board}`, pin);
+        
+        // Hide PIN section
+        document.getElementById('pinSection').classList.add('hidden');
+        
+        // Load phase
+        phase = data.phase || 'hauptrunde';
+        
+        if (phase === 'vorrunde') {
+          loadVorrunde(data.teams || []);
+        } else {
+          loadHauptrunde(data.match);
+        }
+        
+        showLoading(false);
+      } catch (error) {
+        console.error(error);
+        showMessage('Verbindungsfehler. Bitte erneut versuchen.', 'error');
+        showLoading(false);
+      }
+    }
+
+    // Load Vorrunde
+    function loadVorrunde(teams) {
+      const select = document.getElementById('teamSelect');
+      select.innerHTML = '<option value="">Team auswählen...</option>';
+      teams.forEach(team => {
+        const opt = document.createElement('option');
+        opt.value = team;
+        opt.textContent = team;
+        select.appendChild(opt);
+      });
+
+      // Generate legs buttons (7-14)
+      const grid = document.getElementById('legsGrid');
+      grid.innerHTML = '';
+      for (let i = 7; i <= 14; i++) {
+        const btn = document.createElement('button');
+        btn.className = 'legs-btn';
+        btn.textContent = i;
+        btn.onclick = () => selectLegs(i, btn);
+        grid.appendChild(btn);
+      }
+
+      document.getElementById('vorrundeSection').classList.remove('hidden');
+    }
+
+    function selectLegs(value, btn) {
+      document.querySelectorAll('.legs-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedLegs = value;
+    }
+
+    async function saveVorrunde() {
+      const team = document.getElementById('teamSelect').value;
+      if (!team) {
+        showMessage('Bitte Team auswählen', 'error');
+        return;
+      }
+      if (selectedLegs === null) {
+        showMessage('Bitte Legs auswählen', 'error');
+        return;
+      }
+
+      const btn = document.getElementById('saveVorrundeBtn');
+      btn.disabled = true; // Double-Submit-Schutz
+      showLoading(true);
+
+      try {
+        const response = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          mode: 'cors',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            action: 'saveVorrunde',
+            board, pin, team, legs: selectedLegs
+          })
+        });
+        const data = await response.json();
+        
+        if (data.ok) {
+          showMessage('✅ Score gespeichert!', 'success');
+          // Reset
+          document.getElementById('teamSelect').value = '';
+          selectedLegs = null;
+          document.querySelectorAll('.legs-btn').forEach(b => b.classList.remove('selected'));
+        } else {
+          showMessage(data.msg || 'Fehler beim Speichern', 'error');
+        }
+      } catch (error) {
+        console.error(error);
+        showMessage('Verbindungsfehler. Bitte erneut versuchen.', 'error');
+      } finally {
+        btn.disabled = false; // Button wieder freigeben
+        showLoading(false);
+      }
+    }
+
+    // Load Hauptrunde
+    function loadHauptrunde(match) {
+      if (!match) {
+        document.getElementById('matchInfo').textContent = 'Kein aktives Match an diesem Board';
+        return;
+      }
+
+      currentMatch = match;
+      document.getElementById('matchInfo').textContent = `Match ${match.num}: ${match.group}`;
+      
+      // Team 1
+      document.getElementById('team1Name').textContent = match.team1;
+      document.getElementById('team1Section').classList.remove('hidden');
+      const t1Buttons = document.getElementById('team1Buttons');
+      t1Buttons.innerHTML = '';
+      [0, 1, 2].forEach(val => {
+        const btn = document.createElement('button');
+        btn.className = 'score-btn';
+        btn.textContent = val;
+        btn.onclick = () => selectScore(1, val, btn);
+        t1Buttons.appendChild(btn);
+      });
+
+      // Team 2
+      document.getElementById('team2Name').textContent = match.team2;
+      document.getElementById('team2Section').classList.remove('hidden');
+      const t2Buttons = document.getElementById('team2Buttons');
+      t2Buttons.innerHTML = '';
+      [0, 1, 2].forEach(val => {
+        const btn = document.createElement('button');
+        btn.className = 'score-btn';
+        btn.textContent = val;
+        btn.onclick = () => selectScore(2, val, btn);
+        t2Buttons.appendChild(btn);
+      });
+
+      document.getElementById('hauptrundeSection').classList.remove('hidden');
+      document.getElementById('saveHauptrundeBtn').classList.remove('hidden');
+    }
+
+    function selectScore(team, value, btn) {
+      if (team === 1) {
+        document.querySelectorAll('#team1Buttons .score-btn').forEach(b => b.classList.remove('selected'));
+        selectedTeam1 = value;
+      } else {
+        document.querySelectorAll('#team2Buttons .score-btn').forEach(b => b.classList.remove('selected'));
+        selectedTeam2 = value;
+      }
+      btn.classList.add('selected');
+    }
+
+    async function saveHauptrunde() {
+      if (selectedTeam1 === null || selectedTeam2 === null) {
+        showMessage('Bitte beide Scores auswählen', 'error');
+        return;
+      }
+
+      // Check 2:2 (Frontend-Validierung)
+      if (selectedTeam1 === 2 && selectedTeam2 === 2) {
+        showMessage('Best of 3: 2:2 ist nicht erlaubt', 'error');
+        return;
+      }
+
+      const btn = document.getElementById('saveHauptrundeBtn');
+      btn.disabled = true; // Double-Submit-Schutz
+      showLoading(true);
+
+      try {
+        const response = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          mode: 'cors',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            action: 'saveHauptrunde',
+            board, pin,
+            match: currentMatch.num,
+            group: currentMatch.group,
+            legs1: selectedTeam1,
+            legs2: selectedTeam2
+          })
+        });
+        const data = await response.json();
+        
+        if (data.ok) {
+          showMessage('✅ Score gespeichert!', 'success');
+          // Reset selection
+          selectedTeam1 = null;
+          selectedTeam2 = null;
+          document.querySelectorAll('.score-btn').forEach(b => b.classList.remove('selected'));
+        } else {
+          showMessage(data.msg || 'Fehler beim Speichern', 'error');
+        }
+      } catch (error) {
+        console.error(error);
+        showMessage('Verbindungsfehler. Bitte erneut versuchen.', 'error');
+      } finally {
+        btn.disabled = false; // Button wieder freigeben
+        showLoading(false);
+      }
+    }
+
+    function showLoading(show) {
+      const box = document.getElementById('loadingBox');
+      if (show) {
+        box.classList.add('active');
+      } else {
+        box.classList.remove('active');
+      }
+    }
+
+    // Start
+    init();
+  </script>
+</body>
+</html>

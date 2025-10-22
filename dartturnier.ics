@@ -1,0 +1,22 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//AS2 Hochberg//Dartturnier//DE
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+DTSTART:20251024T193000
+DTEND:20251024T235900
+DTSTAMP:20251015T201500Z
+UID:dartturnier-as2-hochberg-2025@as2-dartturnier-hochberg.netlify.app
+SUMMARY:AS2 Hochberg - Dartturnier (2er-Teams)
+DESCRIPTION:Dartturnier im AS2 Hochberg\n\n2er-Teams\, 501 Double Out\nStartgeld: 30€ pro Team\nVorrunde + Hauptrunde (Round Robin)\n\nAnmeldung: https://as2-dartturnier-hochberg.netlify.app\nTelefon: 0170 563 1794
+LOCATION:AS2 Hochberg\, Am Schloß 2\, 71686 Remseck am Neckar
+STATUS:CONFIRMED
+SEQUENCE:0
+BEGIN:VALARM
+TRIGGER:-P1D
+ACTION:DISPLAY
+DESCRIPTION:Reminder: Dartturnier im AS2 Hochberg morgen um 19:30 Uhr
+END:VALARM
+END:VEVENT
+END:VCALENDAR

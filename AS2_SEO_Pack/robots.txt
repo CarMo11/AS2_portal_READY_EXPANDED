@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://as2-dartturnier-hochberg.netlify.app/sitemap.xml

@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AS2 Hochberg · Live Monitor</title>
+<style>
+  :root { --bg:#0b0d10; --card:#13161a; --txt:#e8eef5; --muted:#9fb0c3; --acc:#00dca6; --pending:#9fb0c3; }
+  html,body { margin:0; padding:0; background:radial-gradient(1200px 800px at 50% -10%,#1c2130 0%,#0b0e13 60%); color:var(--txt); font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; font-size: 16px; }
+  .wrap { max-width: 1400px; margin: 0 auto; padding: 24px; }
+  header { display:flex; align-items:center; justify-content:space-between; margin-bottom: 20px; border-bottom: 2px solid var(--acc); padding-bottom: 12px; flex-wrap:wrap; gap:12px; }
+  header h1 { font-size: 28px; margin:0; letter-spacing: .5px; color: var(--acc2); }
+  header .controls { display:flex; gap:8px; align-items:center; }
+  header .updated { font-size: 14px; color: var(--muted); }
+  .btn-control { background:#222; border:1px solid #555; color:#eee; padding:8px 14px; border-radius:8px; cursor:pointer; font-size:13px; font-weight:600; transition:all 0.2s; }
+  .btn-control:hover { background:#333; border-color:#777; }
+  
+  /* TV-Modus */
+  body.tv-mode { font-size: 20px; }
+  body.tv-mode .table td, body.tv-mode .table th { font-size: 19px; padding: 12px 14px; }
+  body.tv-mode header h1 { font-size: 32px; }
+  body.tv-mode .teams { font-size: 20px; }
+  body.tv-mode .score { font-size: 26px; }
+  body.tv-mode .board-item .board-teams { font-size: 17px; }
+  body.tv-mode .board-item .board-score { font-size: 19px; }
+  .views { position:relative; min-height: 70vh; }
+  .view { display:none; }
+  .view.active { display:block; animation: fadeIn 0.4s ease; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .cards { display:grid; grid-template-columns: repeat(3,1fr); gap:16px; margin: 20px 0 24px; }
+  .card { background: var(--card); border: 1px solid rgba(230,126,34,.3); border-radius: 14px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,.4); }
+  .card .label { font-size: 15px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+  .card .value { font-size: 42px; font-weight: 800; margin-top: 8px; letter-spacing: .5px; color: var(--acc2); }
+
+  .cols { display:grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .panel { background: var(--card); border: 1px solid rgba(255,255,255,.08); border-radius: 14px; overflow:hidden; box-shadow: 0 4px 12px rgba(0,0,0,.3); }
+  .panel h3 { margin:0; padding: 14px 18px; border-bottom: 2px solid var(--acc); font-size: 18px; color: var(--acc2); background: rgba(230,126,34,.05); font-weight: 700; }
+  .list { list-style: none; margin: 0; padding: 12px 16px 20px; max-height: 54vh; overflow:auto; }
+  .list li { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.06); padding: 12px 14px; border-radius: 10px; margin: 8px 0; font-size: 16px; }
+  .table { width:100%; border-collapse: collapse; }
+  .table th, .table td { padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,.08); text-align: left; }
+  .table th { color: var(--muted); font-weight: 700; font-size: 14px; text-transform: uppercase; letter-spacing: .5px; }
+  .table td { font-size: 18px; }
+  .table tr.leader td { background: linear-gradient(90deg, rgba(230,126,34,.15), rgba(230,126,34,0)); border-left: 3px solid var(--acc); }
+
+  .fixtures { display:grid; grid-template-columns: 1fr; gap: 10px; padding: 12px 16px 20px; max-height: 54vh; overflow:auto; }
+  .fixture { display:flex; align-items:center; justify-content:space-between; background: rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06); padding: 12px 14px; border-radius: 10px; transition: all 0.2s; }
+  .fixture.live { border-color: var(--acc); background: rgba(230,126,34,.08); }
+  .fx-left { display:flex; gap:12px; align-items:center; flex-wrap: wrap; }
+  .badge { background: rgba(255,255,255,.1); padding: 5px 10px; border-radius: 6px; font-weight:700; font-size: 13px; color: var(--muted); }
+  .badge.board { background: var(--acc); color: #1a120b; }
+  .teams { font-size: 18px; font-weight: 700; }
+  .score { font-size: 24px; font-weight: 800; letter-spacing: .5px; min-width: 80px; text-align: right; }
+  .score.live { color: var(--acc2); }
+  .score.pending { color: var(--muted); }
+  .score.done { color: #8ad88a; }
+
+  /* Boards-Compact */
+  .boards-compact { padding: 12px 16px 20px; max-height: 70vh; overflow:auto; }
+  .board-item { background: rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08); border-radius: 10px; padding: 10px 12px; margin: 8px 0; }
+  .board-item .board-header { display:flex; align-items:center; justify-content:space-between; margin-bottom: 6px; }
+  .board-item .board-name { font-weight: 800; font-size: 16px; color: var(--acc2); }
+  .board-item .board-match { font-size: 13px; color: var(--muted); }
+  .board-item .board-teams { font-size: 15px; font-weight: 700; margin: 4px 0; }
+  .board-item .board-score { font-size: 17px; font-weight: 800; }
+  .board-item.live { border-color: var(--acc); background: rgba(230,126,34,.08); }
+  .board-item .board-score.live { color: var(--acc2); }
+  .board-item .board-score.pending { color: var(--muted); }
+  .board-item .board-score.done { color: #8ad88a; }
+
+  /* Side-Bet Badges */
+  .sidebet-bar { display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; }
+  .sidebet-badge { background:rgba(230,126,34,.15); border:1px solid rgba(230,126,34,.3); padding:4px 8px; border-radius:6px; font-size:12px; font-weight:600; display:flex; align-items:center; gap:4px; }
+  .sidebet-badge.highlight { background:rgba(230,126,34,.3); border-color:var(--acc); color:var(--acc2); }
+  .sidebet-icon { font-size:14px; }
+
+  /* Side-Bet Stats Panel */
+  .sidebets-panel { background:rgba(255,255,255,.02); border:1px solid rgba(255,255,255,.06); border-radius:10px; padding:12px 16px; margin-top:12px; }
+  .sidebets-panel h4 { margin:0 0 8px; font-size:14px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; }
+  .sidebets-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:8px; }
+  .sidebets-item { display:flex; align-items:center; gap:8px; padding:6px 8px; background:rgba(255,255,255,.03); border-radius:6px; }
+  .sidebets-item .icon { font-size:18px; }
+  .sidebets-item .info { flex:1; min-width:0; }
+  .sidebets-item .team { font-size:12px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .sidebets-item .count { font-size:11px; color:var(--muted); }
+
+  @media (max-width: 1100px){
+    .cards{grid-template-columns:1fr;}
+    .cols{grid-template-columns:1fr;}
+    .boards{grid-template-columns:1fr;}
+    .table td{font-size:16px;}
+    header h1 { font-size: 22px; }
+  }
+
+  .dotnav { display:flex; justify-content:center; gap:10px; margin-top:20px; }
+  .dotnav .dot { width:10px; height:10px; border-radius:50%; background:#39424d; transition: all 0.3s; }
+  .dotnav .dot.active { background: var(--acc); box-shadow: 0 0 0 4px rgba(230,126,34,.2); transform: scale(1.2); }
+  
+  /* QR-Code Modal */
+  .qr-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.7); backdrop-filter:blur(4px); align-items:center; justify-content:center; z-index:9999; }
+  .qr-modal.active { display:flex; }
+  .qr-content { background:#111; padding:24px 28px; border-radius:16px; border:2px solid var(--acc); box-shadow: 0 8px 32px rgba(0,0,0,.8); text-align:center; }
+  .qr-content h3 { margin:0 0 16px; color:var(--acc2); font-size:20px; }
+  .qr-content canvas { border-radius:8px; background:#fff; padding:12px; }
+  .qr-content p { margin:12px 0 0; font-size:13px; color:var(--muted); }
+</style>
+</head>
+<body>
+  <audio id="ping" preload="auto">
+    <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGmdbwxnEjBSuBzvLZiTYIGGi77OWfTRALUKfj8LhjHAU3kNfyz3osBSh+zPLaizsIHm7A7+OZUQ4PVqvn8rlnHAU7lNv0yXIjBS6Dx/DWhzwJG2y+7+OcUQ4NVKzn8r1qHwY5kt7yyHAjBTCC0PLVijcJGmm77+WeTRAMUavk8L5nHAY5lN7zx28jBSyCzPLaizkIG2/A7+KbURAPVqzm8bxoHgY6lNzyx3IjBjGDz/LUijYIGmi56+SfTg8PUqjk8btlHAU7k93zxXAmBSuAzPDYizoJGnC/7+OdTw8OU67k87toHgU7k9zzyHEkBS+Dy/LVijkHHGm76+WeTBANUank8btmHgY4lNv0x3IkBS+BzPPXizsJG2/B8N+dURAPVqzl8L1oHAU6lN30yHAjBTGCzfPXiToIGmu87OWgTQ8MU6rl8b5oHAU5k9zyx3IjBTCEzvLYiDkHGm257OahTg8NU6vm8L1oHQY5lNz0xm8jBTGDzfLYizgHG22/7eGfUBAOVa3l8b5mHAY5lNzyxnAjBTCEzvLYizgIHG2+7uGgUBAOVq3l8bxmHAY4k9zyxXAjBjCEz/LYizgIHGy+7uGgUBAPVq3l8bxmHAY4k9zyx28jBjCEz/HYizgIHGy+7eGfUBAPVq3l8r1mHAY4k9zyxm8jBjCEz/LXizgHHGy+7eGgUBAPVq3l8r1mHAY4k9zyx3AjBTCEz/LXizgIHGy+7eGgUBAPVq3l8bxmHAY4k9zyxm8jBjCEz/LYizgIHGy+7eGgUBAPVq3l8bxmHAY4k9zyxm8jBjCEz/LYizgIHGy+7eGgUBAPVq3l8bxmHAY4k9zyxm8jBjCEz/LYizgIHGy+7eGgUBAPVq3l8bxmHAY4k9zyxm8jBjCEz/LYizgIHGy+7eGgUBAPVq3l8bxmHAY4k9zyxm8jBjCEz/LYizgIHGy+7eGgUBAPVq3l8bxmHAY4k9zyxm8jBjCEz/LYizgIHGy+7eGgUBAPVq3l8bxmHAY4k9zyxm8jBjCEz/LYizgIHGy+7eGgUBAPVq3l8bxmHAY4k9zyxm8jBjCEz/LYizgIHGy+7eGgUBAPVq3l8bxmHAY4k9zyxm8jBjCEz/LYizgIHGy+7eGgUBAPVq3l8bxmHAY4k9zyxm8jBjCEz/LYizgIHGy+7eGgUBAPVq3l8bxmHAY4k9zyxm8jBjCEz/LYizgIHGy+7eGgUBAPVq3l8bxmHAY4k9zyxm8jBjCEz/LYizgIHGy+7eGgUBAPVq3l8bxmHAY4k9zyxm8jBjCEz/LYizgIHGy+7eGgUBAPVq3l8bxmHAY4k9zyxm8jBjCEz/LYizgIHGy+7eGgUBAPVq3l8bxmHAY4k9zyxm8jBjCEz/LYizgIHGy+7eGgUBAPVq3l8bxmHAY4k9zyxm8jBjCEz/LYizgIHGy+7eGgUBAPVq3l8bxmHAY4k9zyxm8jBjCEz/LYizgIHGy+7eGgUBAPVq3l8bxmHAY4k9zyxm8jBjCEz/LYizgIHGy+7eGgUBAPVq3l8bxmHAY4k9zyxm8jBjCEz/LYizgIHGy+7eGgUBAPVq3l8bxmHAY4k9zyxm8jBjCEz/LYizgIHGy+7eGgUBAPVq3l8bxmHAY4k9zyxm8jBjCEz/LYizgIHGy+7eGgUBAPVq3l8bxmHAY4k9zyxm8jBjCEz/LYizgIHGy+7eGgUBAPVq3l8bxmHAY4k9zyxm8jBjCEz/LYizgIHGy+7eGgUBAPVq3l8bxmHAY4k9zyxm8jBjCEz/LYizgIHGy+7eGgUBAPVq3l8bxmHAY4k9zyxm8jBjCEz/LYizgIHGy+7eGgUBAPVq3l8bxmHAY4k9zyxm8jBjCEz/LYizgIHGy+7eGgUBAPVq3l8bxmHAY4k9zyxm8jBjCEz/LYizgIHGy+7eGgUBAPVq3l8bxmHAY4k9zyxm8jBjCEz/LYizgIHGy+7eGgUBAPVq3l8bxmHAY=" type="audio/wav">
+  </audio>
+  <div class="wrap">
+    <header>
+      <h1>🎯 AS2 Hochberg Dartturnier · Live Monitor</h1>
+      <div class="controls">
+        <button id="tvBtn" class="btn-control">📺 TV-Modus</button>
+        <button id="qrBtn" class="btn-control">📱 QR-Code</button>
+        <div class="updated" id="updated">–</div>
+      </div>
+    </header>
+
+    <div class="views">
+      <!-- VIEW 1: Vorrunde -->
+      <section class="view active" id="view-vorrunde">
+        <div class="panel">
+          <h3>🎯 Vorrunde · Ranking nach 4 Läufen</h3>
+          <div style="padding: 12px 16px 20px; overflow:auto; max-height: 75vh;">
+            <table class="table" id="vorrundeTable"><tr><td>Lädt Vorrunde...</td></tr></table>
+          </div>
+          <!-- Side-Bets Stats -->
+          <div class="sidebets-panel">
+            <h4>🍺 Side-Bets</h4>
+            <div class="sidebets-grid" id="sidebetsVorrunde"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 2: Hauptrunde (A + B kombiniert) -->
+      <section class="view" id="view-hauptrunde">
+        <div style="display:grid;grid-template-columns:1fr 1fr 340px;gap:20px">
+          <div class="panel">
+            <h3>🏆 Gruppe A · Tabelle</h3>
+            <div style="padding: 12px 16px 20px; overflow:auto; max-height: 32vh;">
+              <table class="table" id="aTable"><tr><td>Lädt...</td></tr></table>
+            </div>
+            <h3 style="margin-top:12px;padding: 12px 16px;border-bottom: 2px solid var(--acc);border-top:1px solid rgba(255,255,255,.08);background: rgba(230,126,34,.05);font-weight:700">📋 Gruppe A · Spiele</h3>
+            <div class="fixtures" id="aGames" style="max-height:32vh;overflow:auto"></div>
+          </div>
+          <div class="panel">
+            <h3>🏆 Gruppe B · Tabelle</h3>
+            <div style="padding: 12px 16px 20px; overflow:auto; max-height: 32vh;">
+              <table class="table" id="bTable"><tr><td>Lädt...</td></tr></table>
+            </div>
+            <h3 style="margin-top:12px;padding: 12px 16px;border-bottom: 2px solid var(--acc);border-top:1px solid rgba(255,255,255,.08);background: rgba(230,126,34,.05);font-weight:700">📋 Gruppe B · Spiele</h3>
+            <div class="fixtures" id="bGames" style="max-height:32vh;overflow:auto"></div>
+          </div>
+          <div class="panel">
+            <h3>🎯 Boards · Aktuell</h3>
+            <div class="boards-compact" id="boardsHauptrunde"></div>
+            <!-- Side-Bets Stats -->
+            <div class="sidebets-panel" style="margin-top:16px">
+              <h4>🍺 Side-Bets</h4>
+              <div class="sidebets-grid" id="sidebetsHauptrunde"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="dotnav" id="dotnav">
+      <div class="dot active"></div>
+      <div class="dot"></div>
+    </div>
+  </div>
+
+  <!-- QR-Code Modal -->
+  <div class="qr-modal" id="qrModal">
+    <div class="qr-content">
+      <h3>📱 Scan für Monitor</h3>
+      <canvas id="qrCanvas"></canvas>
+      <p>Spieler & Zuschauer können den Monitor live mitverfolgen</p>
+    </div>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script>
+/** === TV-Modus Button === */
+document.getElementById('tvBtn')?.addEventListener('click', ()=>{
+  document.body.classList.toggle('tv-mode');
+  const btn = document.getElementById('tvBtn');
+  btn.textContent = document.body.classList.contains('tv-mode') ? '📺 Normal' : '📺 TV-Modus';
+});
+
+/** === QR-Code Button === */
+const qrModal = document.getElementById('qrModal');
+const qrCanvas = document.getElementById('qrCanvas');
+document.getElementById('qrBtn')?.addEventListener('click', ()=>{
+  qrModal.classList.add('active');
+  if(typeof QRCode !== 'undefined'){
+    QRCode.toCanvas(qrCanvas, window.location.href, { width: 220, margin: 2 });
+  }
+});
+qrModal?.addEventListener('click', (e)=> {
+  if(e.target === qrModal) qrModal.classList.remove('active');
+});
+
+/** === Ping Sound bei Live-Match === */
+let prevLiveKeys = new Set();
+function getLiveKeys(rows){
+  const out = new Set();
+  if(!rows || rows.length < 2) return out;
+  for (let i=1; i<rows.length; i++){
+    const [match, board, t1, t2, l1, l2] = rows[i];
+    const legs1 = +l1 || 0, legs2 = +l2 || 0;
+    const started = (legs1 + legs2) > 0;
+    const done = Math.max(legs1, legs2) >= 2;
+    if (started && !done && board) out.add(`${board}|${t1}|${t2}`);
+  }
+  return out;
+}
+function checkNewLiveMatches(aGm, bGm){
+  const cur = new Set([...getLiveKeys(aGm), ...getLiveKeys(bGm)]);
+  for (const k of cur){
+    if (!prevLiveKeys.has(k)){
+      document.getElementById('ping')?.play().catch(()=>{});
+      console.log('🔴 Neues Live-Match:', k);
+    }
+  }
+  prevLiveKeys = cur;
+}
+
+/** === CSV-URLs === */
+const CSV = {
+  vorrunde: "https://docs.google.com/spreadsheets/d/11qd00fEEVDIWbXl8Rx6A0vvCD8WHK2FiiXVqaxtuKDk/gviz/tq?tqx=out:csv&sheet=Vorrunde%20%E2%80%93%20Tabelle",
+  aTable: "https://docs.google.com/spreadsheets/d/11qd00fEEVDIWbXl8Rx6A0vvCD8WHK2FiiXVqaxtuKDk/gviz/tq?tqx=out:csv&sheet=A%20%E2%80%93%20Tabelle",
+  bTable: "https://docs.google.com/spreadsheets/d/11qd00fEEVDIWbXl8Rx6A0vvCD8WHK2FiiXVqaxtuKDk/gviz/tq?tqx=out:csv&sheet=B%20%E2%80%93%20Tabelle",
+  aGames: "https://docs.google.com/spreadsheets/d/11qd00fEEVDIWbXl8Rx6A0vvCD8WHK2FiiXVqaxtuKDk/gviz/tq?tqx=out:csv&sheet=A%20%E2%80%93%20Ergebnisse",
+  bGames: "https://docs.google.com/spreadsheets/d/11qd00fEEVDIWbXl8Rx6A0vvCD8WHK2FiiXVqaxtuKDk/gviz/tq?tqx=out:csv&sheet=B%20%E2%80%93%20Ergebnisse",
+  sidebets: "https://docs.google.com/spreadsheets/d/11qd00fEEVDIWbXl8Rx6A0vvCD8WHK2FiiXVqaxtuKDk/gviz/tq?tqx=out:csv&sheet=Side-Bets",
+};
+
+function parseCSV(text){
+  const rows = [];
+  let row = [], val = '', inQuotes = false;
+  for (let i=0;i<text.length;i++){
+    const c = text[i], n = text[i+1];
+    if (c === '"' && n === '"'){ val += '"'; i++; continue; }
+    if (c === '"'){ inQuotes = !inQuotes; continue; }
+    if (c === ',' && !inQuotes){ row.push(val); val=''; continue; }
+    if ((c === '\n' || c === '\r') && !inQuotes){
+      if (val !== '' || row.length){ row.push(val); rows.push(row); row=[]; val=''; }
+      continue;
+    }
+    val += c;
+  }
+  if (val !== '' || row.length) { row.push(val); rows.push(row); }
+  return rows.map(r => r.map(x => x.trim()));
+}
+
+async function fetchCSV(url){
+  try {
+    const res = await fetch(url + '&_=' + Date.now());
+    if (!res.ok) throw new Error('Fetch failed');
+    const txt = await res.text();
+    return parseCSV(txt);
+  } catch(e) {
+    console.error('CSV Error:', url, e);
+    return null;
+  }
+}
+
+/** RENDER: Vorrunde */
+function renderVorrunde(rows){
+  const tbl = document.getElementById('vorrundeTable');
+  tbl.innerHTML = '';
+  if(!rows || rows.length<2){ tbl.innerHTML = '<tr><td>Keine Vorrundendaten verfügbar</td></tr>'; return; }
+
+  const thead = document.createElement('thead');
+  const hr = document.createElement('tr');
+  (rows[0]).forEach(h => {
+    const th=document.createElement('th'); th.textContent=h; hr.appendChild(th);
+  });
+  thead.appendChild(hr);
+  tbl.appendChild(thead);
+
+  const tbody = document.createElement('tbody');
+  for(let i=1;i<rows.length;i++){
+    const tr=document.createElement('tr');
+    if (i<=3) tr.classList.add('leader'); // Top 3 hervorheben
+    rows[i].forEach((val, idx)=>{
+      const td=document.createElement('td');
+      td.textContent = val;
+      if (idx===0 || idx===1) td.style.fontWeight='800'; // Team + Rang
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  }
+  tbl.appendChild(tbody);
+}
+
+/** RENDER: Tabelle (A/B) */
+function renderTable(targetId, rows){
+  const tbl = document.getElementById(targetId);
+  tbl.innerHTML = '';
+  if(!rows || rows.length<2){ tbl.innerHTML = '<tr><td>Keine Daten verfügbar</td></tr>'; return; }
+
+  const thead = document.createElement('thead');
+  const hr = document.createElement('tr');
+  (rows[0]).forEach(h => {
+    const th=document.createElement('th'); th.textContent=h; hr.appendChild(th);
+  });
+  thead.appendChild(hr);
+  tbl.appendChild(thead);
+
+  const tbody = document.createElement('tbody');
+  for(let i=1;i<rows.length;i++){
+    const tr=document.createElement('tr');
+    if (i===1) tr.classList.add('leader');
+    rows[i].forEach((val, idx)=>{
+      const td=document.createElement('td');
+      td.textContent = val;
+      if (idx===0) td.style.fontWeight='800';
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  }
+  tbl.appendChild(tbody);
+}
+
+/** RENDER: Fixtures (A/B) */
+function renderGames(targetId, rows){
+  const box = document.getElementById(targetId);
+  box.innerHTML = '';
+  if(!rows || rows.length<2){ box.innerHTML='<div class="fixture"><div class="teams">Keine Spiele</div></div>'; return; }
+
+  for(let i=1;i<rows.length;i++){
+    const [match, board, t1, t2, l1, l2] = rows[i];
+    const sc1 = (l1||'') === '' ? '–' : l1;
+    const sc2 = (l2||'') === '' ? '–' : l2;
+    const max = Math.max(+l1||0, +l2||0);
+    const cls = max>=2 ? 'done' : ((sc1!=='–' || sc2!=='–') ? 'live' : 'pending');
+    const isLive = cls === 'live';
+
+    const fx = document.createElement('div');
+    fx.className = 'fixture' + (isLive ? ' live' : '');
+    fx.innerHTML = `
+      <div class="fx-left">
+        <span class="badge board">${board || '—'}</span>
+        <span class="badge">${match || ''}</span>
+        <span class="teams">${t1 || '—'} <span style="opacity:.6">vs</span> ${t2 || '—'}</span>
+      </div>
+      <div class="score ${cls}">${sc1} : ${sc2}</div>
+    `;
+    box.appendChild(fx);
+  }
+}
+
+/** RENDER: Boards Compact (nur Hauptrunde) */
+function renderBoardsCompact(aRows, bRows){
+  function toObjs(rows, grp){
+    const out=[];
+    if(!rows || rows.length<2) return out;
+    for(let i=1;i<rows.length;i++){
+      const [match, board, t1, t2, l1, l2] = rows[i];
+      if(!board) continue;
+      const legs1 = +l1 || 0, legs2 = +l2 || 0;
+      out.push({
+        grp, match, board,
+        t1: t1||'—', t2: t2||'—',
+        l1: legs1, l2: legs2,
+        done: Math.max(legs1, legs2) >= 2,
+        started: (legs1>0 || legs2>0),
+        order: i
+      });
+    }
+    return out;
+  }
+  
+  const all = [...toObjs(aRows,'A'), ...toObjs(bRows,'B')];
+  const boards = Array.from(new Set(all.map(x=>x.board))).sort((a,b)=>a.localeCompare(b,'de'));
+  
+  // Nur Hauptrunde-Boards rendern
+  const box = document.getElementById('boardsHauptrunde');
+  box.innerHTML = '';
+  if(!boards.length){ box.innerHTML = '<div style="padding:12px;color:#999">Keine Boards</div>'; return; }
+
+  boards.forEach(b=>{
+    const q = all.filter(x=>x.board===b).sort((x,y)=>x.order-y.order);
+    const current = q.find(x=>!x.done);
+    
+    if(!current){ return; } // Nur aktive Boards zeigen
+    
+    const sc1 = current.l1 || '–', sc2 = current.l2 || '–';
+    const cls = current.done ? 'done' : (current.started ? 'live' : 'pending');
+    const isLive = cls === 'live';
+
+    const item = document.createElement('div');
+    item.className = 'board-item' + (isLive ? ' live' : '');
+    item.innerHTML = `
+      <div class="board-header">
+        <div class="board-name">${b}</div>
+        <div class="board-match">M${current.match} · ${current.grp}</div>
+      </div>
+      <div class="board-teams">${current.t1} vs ${current.t2}</div>
+      <div class="board-score ${cls}">${sc1} : ${sc2}</div>
+    `;
+    box.appendChild(item);
+  });
+  
+  if(box.children.length === 0){
+    box.innerHTML = '<div style="padding:12px;color:#999;text-align:center">Keine aktiven Boards</div>';
+  }
+}
+
+/** RENDER: Side-Bets */
+function renderSideBets(rows){
+  const sidebetTypes = [
+    { icon: '🥃', label: '180', col: 1 },
+    { icon: '💯', label: 'High Finish', col: 2 },
+    { icon: '⚡', label: 'Leg ≤6', col: 3 },
+    { icon: '🐟', label: 'Big Fish 170', col: 4 },
+    { icon: '🎯', label: 'Bullseye', col: 5 }
+  ];
+
+  function renderToTarget(targetId){
+    const box = document.getElementById(targetId);
+    if(!box) return;
+    box.innerHTML = '';
+    
+    if(!rows || rows.length < 2){
+      box.innerHTML = '<div style="padding:8px;color:#999;font-size:12px;text-align:center">Keine Side-Bet Daten</div>';
+      return;
+    }
+
+    sidebetTypes.forEach(type => {
+      const items = [];
+      for(let i=1; i<rows.length; i++){
+        const team = rows[i][0];
+        const count = +(rows[i][type.col]) || 0;
+        if(team && count > 0) items.push({ team, count });
+      }
+      
+      items.sort((a,b) => b.count - a.count);
+      const top = items[0];
+      
+      if(top){
+        const el = document.createElement('div');
+        el.className = 'sidebets-item';
+        el.innerHTML = `
+          <div class="icon">${type.icon}</div>
+          <div class="info">
+            <div class="team">${top.team}</div>
+            <div class="count">${top.count}× ${type.label}</div>
+          </div>
+        `;
+        box.appendChild(el);
+      }
+    });
+
+    if(box.children.length === 0){
+      box.innerHTML = '<div style="padding:8px;color:#999;font-size:12px;text-align:center">Noch keine Side-Bets</div>';
+    }
+  }
+
+  renderToTarget('sidebetsVorrunde');
+  renderToTarget('sidebetsHauptrunde');
+}
+
+/** DATEN HOLEN & RENDERN */
+async function refreshAll(){
+  const [vorrunde, aTab, bTab, aGm, bGm, sidebets] = await Promise.all([
+    fetchCSV(CSV.vorrunde),
+    fetchCSV(CSV.aTable),
+    fetchCSV(CSV.bTable),
+    fetchCSV(CSV.aGames),
+    fetchCSV(CSV.bGames),
+    fetchCSV(CSV.sidebets),
+  ]);
+  renderVorrunde(vorrunde);
+  renderTable('aTable', aTab);
+  renderTable('bTable', bTab);
+  renderGames('aGames', aGm);
+  renderGames('bGames', bGm);
+  renderBoardsCompact(aGm, bGm);
+  renderSideBets(sidebets);
+  checkNewLiveMatches(aGm, bGm);
+
+  document.getElementById('updated').textContent =
+    'Aktualisiert: ' + new Date().toLocaleTimeString('de-DE');
+}
+
+/** VIEW WECHSEL (nur manuell, 2 Views) */
+const views = ['view-vorrunde','view-hauptrunde'];
+let viewIdx = 0;
+
+function showView(i){
+  viewIdx = (i + views.length) % views.length;
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(views[viewIdx]).classList.add('active');
+  document.querySelectorAll('#dotnav .dot').forEach((d,idx)=> d.classList.toggle('active', idx===viewIdx));
+  console.log('View:', ['Vorrunde','Hauptrunde'][viewIdx]);
+}
+
+// Tasten-Steuerung (nur manuell)
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight' || e.key==='n' || e.key==='N') { showView(viewIdx+1); }
+  if(e.key==='ArrowLeft'  || e.key==='p' || e.key==='P') { showView(viewIdx-1); }
+  if(e.key==='r' || e.key==='R') refreshAll(); // R = Refresh
+  if(e.key==='1') showView(0); // 1 = Vorrunde
+  if(e.key==='2') showView(1); // 2 = Hauptrunde
+});
+
+/** START */
+console.log('🎯 AS2 Monitor gestartet');
+refreshAll();
+setInterval(refreshAll, 30000); // alle 30s Daten neu laden
+</script>
+</body>
+</html>
