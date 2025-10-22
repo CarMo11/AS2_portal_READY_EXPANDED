@@ -166,7 +166,6 @@
     </div>
   </div>
 
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script>
 /** === TV-Modus Button === */
 document.getElementById('tvBtn')?.addEventListener('click', ()=>{
@@ -174,49 +173,6 @@ document.getElementById('tvBtn')?.addEventListener('click', ()=>{
   const btn = document.getElementById('tvBtn');
   btn.textContent = document.body.classList.contains('tv-mode') ? '📺 Normal' : '📺 TV-Modus';
 });
-
-/** === QR-Code Auto-Generate === */
-const qrCanvas = document.getElementById('qrCanvas');
-
-function generateQR() {
-  if (!qrCanvas) {
-    console.log('QR Canvas not found');
-    return;
-  }
-  
-  // Warte bis QRCode Library geladen ist
-  if (typeof QRCode === 'undefined') {
-    console.log('QRCode library not loaded yet, retrying...');
-    setTimeout(generateQR, 300); // Retry nach 300ms
-    return;
-  }
-  
-  try {
-    console.log('Generating QR Code for:', window.location.href);
-    QRCode.toCanvas(qrCanvas, window.location.href, { 
-      width: 100,  // Kleiner: 100px statt 140px
-      margin: 1,
-      color: {
-        dark: '#000000',
-        light: '#FFFFFF'
-      },
-      errorCorrectionLevel: 'M'
-    }, (error) => {
-      if (error) {
-        console.error('QR Code Error:', error);
-        qrCanvas.style.display = 'none';
-      } else {
-        console.log('QR Code generated successfully!');
-      }
-    });
-  } catch (err) {
-    console.error('QR Generation failed:', err);
-    qrCanvas.style.display = 'none';
-  }
-}
-
-// Generate QR code on page load
-setTimeout(generateQR, 500); // Warte 500ms damit Library geladen ist
 
 /** === Ping Sound bei Live-Match === */
 let prevLiveKeys = new Set();
