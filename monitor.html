@@ -98,14 +98,14 @@
   .dotnav .dot.active { background: var(--acc); box-shadow: 0 0 0 4px rgba(230,126,34,.2); transform: scale(1.2); }
   
   /* QR-Code fixed in corner */
-  .qr-fixed { position:fixed; bottom:20px; right:20px; background:#13161a; padding:16px; border-radius:16px; border:2px solid var(--acc); box-shadow: 0 8px 32px rgba(0,0,0,.6); z-index:999; text-align:center; }
-  .qr-fixed h3 { margin:0 0 12px; color:var(--acc); font-size:14px; font-weight:700; letter-spacing:.5px; }
-  .qr-fixed canvas { border-radius:8px; background:#fff; padding:8px; display:block; }
-  .qr-fixed p { margin:10px 0 0; font-size:11px; color:var(--muted); max-width:150px; line-height:1.4; }
-  body.tv-mode .qr-fixed { bottom:30px; right:30px; padding:20px; }
-  body.tv-mode .qr-fixed h3 { font-size:16px; margin-bottom:14px; }
-  body.tv-mode .qr-fixed canvas { padding:10px; }
-  body.tv-mode .qr-fixed p { font-size:13px; max-width:180px; }
+  .qr-fixed { position:fixed; bottom:10px; right:10px; background:rgba(19,22,26,.95); padding:10px; border-radius:12px; border:2px solid var(--acc); box-shadow: 0 4px 16px rgba(0,0,0,.5); z-index:999; text-align:center; }
+  .qr-fixed h3 { margin:0 0 6px; color:var(--acc); font-size:11px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; }
+  .qr-fixed canvas { border-radius:6px; background:#fff; padding:4px; display:block; }
+  .qr-fixed p { margin:6px 0 0; font-size:9px; color:var(--muted); max-width:100px; line-height:1.3; }
+  body.tv-mode .qr-fixed { bottom:20px; right:20px; padding:14px; }
+  body.tv-mode .qr-fixed h3 { font-size:13px; margin-bottom:8px; }
+  body.tv-mode .qr-fixed canvas { padding:6px; }
+  body.tv-mode .qr-fixed p { font-size:11px; max-width:120px; }
 </style>
 </head>
 <body>
@@ -195,34 +195,44 @@ document.getElementById('tvBtn')?.addEventListener('click', ()=>{
 const qrCanvas = document.getElementById('qrCanvas');
 
 function generateQR() {
-  if (!qrCanvas) return;
+  if (!qrCanvas) {
+    console.log('QR Canvas not found');
+    return;
+  }
   
   // Warte bis QRCode Library geladen ist
   if (typeof QRCode === 'undefined') {
-    setTimeout(generateQR, 200); // Retry nach 200ms
+    console.log('QRCode library not loaded yet, retrying...');
+    setTimeout(generateQR, 300); // Retry nach 300ms
     return;
   }
   
   try {
+    console.log('Generating QR Code for:', window.location.href);
     QRCode.toCanvas(qrCanvas, window.location.href, { 
-      width: 140, 
+      width: 100,  // Kleiner: 100px statt 140px
       margin: 1,
       color: {
         dark: '#000000',
         light: '#FFFFFF'
-      }
+      },
+      errorCorrectionLevel: 'M'
     }, (error) => {
       if (error) {
         console.error('QR Code Error:', error);
+        qrCanvas.style.display = 'none';
+      } else {
+        console.log('QR Code generated successfully!');
       }
     });
   } catch (err) {
     console.error('QR Generation failed:', err);
+    qrCanvas.style.display = 'none';
   }
 }
 
 // Generate QR code on page load
-generateQR();
+setTimeout(generateQR, 500); // Warte 500ms damit Library geladen ist
 
 /** === Ping Sound bei Live-Match === */
 let prevLiveKeys = new Set();
