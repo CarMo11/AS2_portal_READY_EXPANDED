@@ -314,17 +314,6 @@ function renderVorrunde(rows){
   tbl.innerHTML = '';
   if(!rows || rows.length<2){ tbl.innerHTML = '<tr><td>Keine Vorrundendaten verfügbar</td></tr>'; return; }
 
-  // Seed Info Box hinzufügen
-  const container = tbl.parentElement;
-  let infoBox = container.querySelector('.seed-info');
-  if (!infoBox) {
-    infoBox = document.createElement('div');
-    infoBox.className = 'seed-info';
-    infoBox.style.cssText = 'background: rgba(230,126,34,.1); border: 1px solid rgba(230,126,34,.3); border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 15px; color: var(--txt); display: flex; align-items: center; justify-content: center; gap: 20px;';
-    infoBox.innerHTML = '<span style="font-weight: 700; color: var(--acc);">🏆 Top 4 → Seed A</span><span style="color: var(--muted);">|</span><span style="font-weight: 700; color: #9fb0c3;">📊 Platz 5-8 → Seed B</span>';
-    container.insertBefore(infoBox, tbl);
-  }
-
   const thead = document.createElement('thead');
   const hr = document.createElement('tr');
   // Header rendern, aber "Seed (A/B)" Spalte verstecken
@@ -339,6 +328,30 @@ function renderVorrunde(rows){
 
   const tbody = document.createElement('tbody');
   for(let i=1;i<rows.length;i++){
+    // Seed A Label vor Platz 1
+    if (i === 1) {
+      const seedRow = document.createElement('tr');
+      seedRow.style.cssText = 'background: rgba(230,126,34,.15); border-top: 2px solid var(--acc); border-bottom: 2px solid var(--acc);';
+      const seedTd = document.createElement('td');
+      seedTd.colSpan = rows[0].length - 1; // -1 wegen versteckter Seed-Spalte
+      seedTd.style.cssText = 'text-align: center; font-weight: 700; font-size: 14px; padding: 8px; color: var(--acc); letter-spacing: 1px;';
+      seedTd.textContent = '🏆 SEED A';
+      seedRow.appendChild(seedTd);
+      tbody.appendChild(seedRow);
+    }
+    
+    // Seed B Label vor Platz 5
+    if (i === 5) {
+      const seedRow = document.createElement('tr');
+      seedRow.style.cssText = 'background: rgba(159,176,195,.1); border-top: 2px solid #9fb0c3; border-bottom: 2px solid #9fb0c3;';
+      const seedTd = document.createElement('td');
+      seedTd.colSpan = rows[0].length - 1;
+      seedTd.style.cssText = 'text-align: center; font-weight: 700; font-size: 14px; padding: 8px; color: #9fb0c3; letter-spacing: 1px;';
+      seedTd.textContent = '📊 SEED B';
+      seedRow.appendChild(seedTd);
+      tbody.appendChild(seedRow);
+    }
+
     const tr=document.createElement('tr');
     if (i<=4) tr.classList.add('leader'); // Top 4 hervorheben (Seed A)
     rows[i].forEach((val, idx)=>{
