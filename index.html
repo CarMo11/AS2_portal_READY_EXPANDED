@@ -248,23 +248,30 @@
       }
 
       function renderRows(rows){
-        // Neue einfache Logik: Nur Teams aus Spalte A (ab Zeile 2)
+        // Teams aus der richtigen Spalte lesen
         const teams = [];
         
-        // Header finden (z.B. "Bezahlt", "Team", etc.)
+        // Header finden und Team-Spalte identifizieren
         let headerIdx = 0;
+        let teamCol = 1; // Default: Spalte B (häufig bei Google Forms)
+        
         for (let i = 0; i < Math.min(rows.length, 5); i++) {
-          const cell = (rows[i][0] || '').toLowerCase().trim();
-          if (cell.includes('bezahlt') || cell.includes('team') || cell === 'teamname') {
-            headerIdx = i;
-            break;
+          const row = rows[i] || [];
+          for (let col = 0; col < row.length; col++) {
+            const cell = (row[col] || '').toLowerCase().trim();
+            if (cell.includes('team') && !cell.includes('timestamp') && !cell.includes('zeit')) {
+              headerIdx = i;
+              teamCol = col;
+              break;
+            }
           }
+          if (teamCol !== 1 && headerIdx > 0) break;
         }
         
         // Teams sammeln (ab Header + 1)
         for (let i = headerIdx + 1; i < rows.length; i++){
-          const teamName = (rows[i][0] || '').trim();
-          if (teamName && teamName.length > 1) {
+          const teamName = (rows[i][teamCol] || '').trim();
+          if (teamName && teamName.length > 1 && !teamName.match(/^\d{2}\.\d{2}\.\d{4}/)) {
             teams.push(teamName);
           }
         }
