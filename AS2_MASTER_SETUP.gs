@@ -40,6 +40,8 @@ function onOpen() {
     .addItem('🅱️ Gruppe B Tabelle berechnen', 'recalcGroupB')
     .addItem('♻️ ALLES berechnen (Vor + A/B)', 'recalcAll')
     .addSeparator()
+    .addItem('🔄 Reset Hauptrunde (A/B löschen)', 'resetHauptrunde')
+    .addSeparator()
     .addItem('✅ Sanity-Check', 'sanityCheck')
     .addItem('📖 Hilfe', 'showHelp')
     .addToUi();
@@ -396,6 +398,81 @@ function showHelp() {
     '⚠️ Settings:\n' +
     '   PINs & AdminPIN ändern!'
   );
+}
+
+// ======= RESET HAUPTRUNDE =======
+function resetHauptrunde() {
+  const ui = SpreadsheetApp.getUi();
+  const response = ui.alert(
+    '🔄 Reset Hauptrunde',
+    'Dies löscht ALLE Match-Paarungen und Scores in Gruppe A und B!\n\n' +
+    'Vorrunde bleibt unberührt.\n\n' +
+    'Fortfahren?',
+    ui.ButtonSet.YES_NO
+  );
+
+  if (response !== ui.Button.YES) {
+    ui.alert('❌ Abgebrochen');
+    return;
+  }
+
+  const ss = SpreadsheetApp.getActive();
+  
+  try {
+    // Reset A – Ergebnisse
+    const aErg = ss.getSheetByName(TABS.A_ERG);
+    if (aErg) {
+      const lastRow = aErg.getLastRow();
+      if (lastRow > 1) {
+        // Alle Zeilen außer Header löschen
+        aErg.deleteRows(2, lastRow - 1);
+      }
+      // Header neu setzen
+      setHeader_(aErg, ['Match', 'Board', 'Team 1', 'Team 2', 'Legs 1', 'Legs 2', 'Status']);
+    }
+
+    // Reset B – Ergebnisse
+    const bErg = ss.getSheetByName(TABS.B_ERG);
+    if (bErg) {
+      const lastRow = bErg.getLastRow();
+      if (lastRow > 1) {
+        bErg.deleteRows(2, lastRow - 1);
+      }
+      setHeader_(bErg, ['Match', 'Board', 'Team 1', 'Team 2', 'Legs 1', 'Legs 2', 'Status']);
+    }
+
+    // Reset A – Tabelle
+    const aTab = ss.getSheetByName(TABS.A_TAB);
+    if (aTab) {
+      const lastRow = aTab.getLastRow();
+      if (lastRow > 1) {
+        aTab.deleteRows(2, lastRow - 1);
+      }
+      setHeader_(aTab, ['Team', 'Siege', 'Legs+', 'Legs–', 'Diff']);
+    }
+
+    // Reset B – Tabelle
+    const bTab = ss.getSheetByName(TABS.B_TAB);
+    if (bTab) {
+      const lastRow = bTab.getLastRow();
+      if (lastRow > 1) {
+        bTab.deleteRows(2, lastRow - 1);
+      }
+      setHeader_(bTab, ['Team', 'Siege', 'Legs+', 'Legs–', 'Diff']);
+    }
+
+    ui.alert(
+      '✅ Reset erfolgreich!',
+      'Alle Hauptrunden-Daten gelöscht:\n\n' +
+      '• A – Ergebnisse: leer\n' +
+      '• B – Ergebnisse: leer\n' +
+      '• A – Tabelle: leer\n' +
+      '• B – Tabelle: leer\n\n' +
+      'Vorrunde bleibt unberührt.'
+    );
+  } catch (err) {
+    ui.alert('❌ Fehler beim Reset: ' + err.message);
+  }
 }
 
 function mustGet_(ss, name) {

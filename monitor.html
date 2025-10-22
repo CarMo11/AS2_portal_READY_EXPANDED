@@ -195,12 +195,50 @@ document.getElementById('tvBtn')?.addEventListener('click', ()=>{
 /** === QR-Code Button === */
 const qrModal = document.getElementById('qrModal');
 const qrCanvas = document.getElementById('qrCanvas');
+let qrGenerated = false;
+
 document.getElementById('qrBtn')?.addEventListener('click', ()=>{
   qrModal.classList.add('active');
-  if(typeof QRCode !== 'undefined'){
-    QRCode.toCanvas(qrCanvas, window.location.href, { width: 220, margin: 2 });
+  
+  if (!qrGenerated) {
+    try {
+      if (typeof QRCode !== 'undefined' && qrCanvas) {
+        // Clear previous QR code
+        const ctx = qrCanvas.getContext('2d');
+        if (ctx) {
+          ctx.clearRect(0, 0, qrCanvas.width, qrCanvas.height);
+        }
+        
+        QRCode.toCanvas(qrCanvas, window.location.href, { 
+          width: 220, 
+          margin: 2,
+          color: {
+            dark: '#000000',
+            light: '#FFFFFF'
+          }
+        }, (error) => {
+          if (error) {
+            console.error('QR Code Error:', error);
+            qrCanvas.parentElement.innerHTML = '<p style="color:red">❌ QR-Code konnte nicht generiert werden</p><p>URL: ' + window.location.href + '</p>';
+          } else {
+            qrGenerated = true;
+          }
+        });
+      } else {
+        console.error('QRCode library not loaded or canvas missing');
+        if (qrCanvas && qrCanvas.parentElement) {
+          qrCanvas.parentElement.innerHTML = '<p style="color:red">❌ QR-Library nicht geladen</p><p>URL: ' + window.location.href + '</p>';
+        }
+      }
+    } catch (err) {
+      console.error('QR Generation failed:', err);
+      if (qrCanvas && qrCanvas.parentElement) {
+        qrCanvas.parentElement.innerHTML = '<p style="color:red">❌ Fehler: ' + err.message + '</p><p>URL: ' + window.location.href + '</p>';
+      }
+    }
   }
 });
+
 qrModal?.addEventListener('click', (e)=> {
   if(e.target === qrModal) qrModal.classList.remove('active');
 });
@@ -276,6 +314,17 @@ function renderVorrunde(rows){
   tbl.innerHTML = '';
   if(!rows || rows.length<2){ tbl.innerHTML = '<tr><td>Keine Vorrundendaten verfügbar</td></tr>'; return; }
 
+  // Seed Info Box hinzufügen
+  const container = tbl.parentElement;
+  let infoBox = container.querySelector('.seed-info');
+  if (!infoBox) {
+    infoBox = document.createElement('div');
+    infoBox.className = 'seed-info';
+    infoBox.style.cssText = 'background: rgba(230,126,34,.1); border: 1px solid rgba(230,126,34,.3); border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 14px; color: var(--muted);';
+    infoBox.innerHTML = '🏆 <strong>Top 4 Teams → Seed A</strong> | 📊 <strong>Platz 5-8 → Seed B</strong>';
+    container.insertBefore(infoBox, tbl);
+  }
+
   const thead = document.createElement('thead');
   const hr = document.createElement('tr');
   (rows[0]).forEach(h => {
@@ -287,11 +336,17 @@ function renderVorrunde(rows){
   const tbody = document.createElement('tbody');
   for(let i=1;i<rows.length;i++){
     const tr=document.createElement('tr');
-    if (i<=3) tr.classList.add('leader'); // Top 3 hervorheben
+    if (i<=4) tr.classList.add('leader'); // Top 4 hervorheben (Seed A)
     rows[i].forEach((val, idx)=>{
       const td=document.createElement('td');
       td.textContent = val;
       if (idx===0 || idx===1) td.style.fontWeight='800'; // Team + Rang
+      // Seed-Spalte mit Emoji
+      if (idx === 5 && val) { // Seed (A/B) Spalte
+        td.textContent = val === 'A' ? '🏆 A' : '📊 B';
+        td.style.fontWeight = '700';
+        td.style.color = val === 'A' ? 'var(--acc)' : '#9fb0c3';
+      }
       tr.appendChild(td);
     });
     tbody.appendChild(tr);
