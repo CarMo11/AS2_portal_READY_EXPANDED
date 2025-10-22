@@ -197,45 +197,48 @@ const qrModal = document.getElementById('qrModal');
 const qrCanvas = document.getElementById('qrCanvas');
 let qrGenerated = false;
 
+function generateQR() {
+  if (!qrCanvas) return;
+  
+  // Warte bis QRCode Library geladen ist
+  if (typeof QRCode === 'undefined') {
+    qrCanvas.parentElement.innerHTML = '<p style="color:#fff">⏳ QR-Library lädt...</p>';
+    setTimeout(generateQR, 200); // Retry nach 200ms
+    return;
+  }
+  
+  try {
+    // Clear previous QR code
+    const ctx = qrCanvas.getContext('2d');
+    if (ctx) {
+      ctx.clearRect(0, 0, qrCanvas.width, qrCanvas.height);
+    }
+    
+    QRCode.toCanvas(qrCanvas, window.location.href, { 
+      width: 220, 
+      margin: 2,
+      color: {
+        dark: '#000000',
+        light: '#FFFFFF'
+      }
+    }, (error) => {
+      if (error) {
+        console.error('QR Code Error:', error);
+        qrCanvas.parentElement.innerHTML = '<p style="color:red">❌ QR-Code Fehler</p><p style="font-size:12px; word-break:break-all;">URL: ' + window.location.href + '</p>';
+      } else {
+        qrGenerated = true;
+      }
+    });
+  } catch (err) {
+    console.error('QR Generation failed:', err);
+    qrCanvas.parentElement.innerHTML = '<p style="color:red">❌ Fehler: ' + err.message + '</p><p style="font-size:12px; word-break:break-all;">URL: ' + window.location.href + '</p>';
+  }
+}
+
 document.getElementById('qrBtn')?.addEventListener('click', ()=>{
   qrModal.classList.add('active');
-  
   if (!qrGenerated) {
-    try {
-      if (typeof QRCode !== 'undefined' && qrCanvas) {
-        // Clear previous QR code
-        const ctx = qrCanvas.getContext('2d');
-        if (ctx) {
-          ctx.clearRect(0, 0, qrCanvas.width, qrCanvas.height);
-        }
-        
-        QRCode.toCanvas(qrCanvas, window.location.href, { 
-          width: 220, 
-          margin: 2,
-          color: {
-            dark: '#000000',
-            light: '#FFFFFF'
-          }
-        }, (error) => {
-          if (error) {
-            console.error('QR Code Error:', error);
-            qrCanvas.parentElement.innerHTML = '<p style="color:red">❌ QR-Code konnte nicht generiert werden</p><p>URL: ' + window.location.href + '</p>';
-          } else {
-            qrGenerated = true;
-          }
-        });
-      } else {
-        console.error('QRCode library not loaded or canvas missing');
-        if (qrCanvas && qrCanvas.parentElement) {
-          qrCanvas.parentElement.innerHTML = '<p style="color:red">❌ QR-Library nicht geladen</p><p>URL: ' + window.location.href + '</p>';
-        }
-      }
-    } catch (err) {
-      console.error('QR Generation failed:', err);
-      if (qrCanvas && qrCanvas.parentElement) {
-        qrCanvas.parentElement.innerHTML = '<p style="color:red">❌ Fehler: ' + err.message + '</p><p>URL: ' + window.location.href + '</p>';
-      }
-    }
+    generateQR();
   }
 });
 
