@@ -345,33 +345,47 @@
         const rows = parseCSV(txt);
         if (!rows.length) throw new Error('No data');
         
-        const data = rows.slice(1); // Header überspringen
         const ul = document.getElementById("singleList");
+        if (!ul) return; // Element existiert nicht mehr
+        
         ul.innerHTML = "";
         
-        if (!data.length) {
-          ul.innerHTML = "<li class='loading-text'>Aktuell keine Einzelspieler sichtbar.</li>";
+        // Filtere nur Einzelspieler mit Matchboard=Ja
+        // Spalten: [0]=Zeit, [6]="Anmeldung als", [7]=Vorname, [8]=Kontakt, [9]=Skill, [11]=Matchboard
+        const singles = rows.slice(1).filter(row => {
+          const anmeldungAls = (row[6] || '').toLowerCase().trim();
+          const matchboard = (row[11] || '').toLowerCase().trim();
+          return anmeldungAls.includes('einzel') && matchboard.includes('ja');
+        });
+        
+        if (!singles.length) {
+          ul.innerHTML = "<li class='loading-text'>Aktuell keine Einzelspieler im Matchboard.</li>";
           return;
         }
 
-        // Erwartete Reihenfolge: [Vorname, Skill, Kontakt]
-        data.forEach(([name, skill, contact]) => {
+        singles.forEach(row => {
+          const name = (row[7] || '').trim(); // Vorname (Einzelspieler)
+          const contact = (row[8] || '').trim(); // Kontakt
+          const skill = (row[9] || '').trim(); // Skill
+          
+          if (!name) return; // Kein Name = überspringen
+          
           const href = contactHref(contact);
           const shown = maskContact(contact);
           const li = document.createElement("li");
           li.style.cssText = "padding:10px;margin:8px 0;background:rgba(255,255,255,.04);border-radius:8px;border-left:3px solid #ffa665";
           
           if (href) {
-            li.innerHTML = `<a href="${href}" target="_blank" rel="noopener" style="color:#ffa665;text-decoration:none"><strong>🎯 ${name || "Einzelspieler"}</strong></a>${skill ? " · " + skill : ""} <span style="color:#999">(${shown})</span>`;
+            li.innerHTML = `<a href="${href}" target="_blank" rel="noopener" style="color:#ffa665;text-decoration:none"><strong>🎯 ${name}</strong></a>${skill ? " · " + skill : ""} ${shown ? `<span style="color:#999">(${shown})</span>` : ""}`;
           } else {
-            li.innerHTML = `<strong style="color:#ffa665">🎯 ${name || "Einzelspieler"}</strong>${skill ? " · " + skill : ""} ${shown ? `<span style="color:#999">(${shown})</span>` : ""}`;
+            li.innerHTML = `<strong style="color:#ffa665">🎯 ${name}</strong>${skill ? " · " + skill : ""} ${shown ? `<span style="color:#999">(${shown})</span>` : ""}`;
           }
           ul.appendChild(li);
         });
       } catch (err) {
         console.error('Matchboard Load Error:', err);
         const ul = document.getElementById("singleList");
-        ul.innerHTML = "<li class='loading-text'>Matchboard konnte nicht geladen werden</li>";
+        if (ul) ul.innerHTML = "<li class='loading-text'>Matchboard konnte nicht geladen werden</li>";
       }
     }
 
