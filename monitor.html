@@ -97,13 +97,15 @@
   .dotnav .dot { width:10px; height:10px; border-radius:50%; background:#39424d; transition: all 0.3s; }
   .dotnav .dot.active { background: var(--acc); box-shadow: 0 0 0 4px rgba(230,126,34,.2); transform: scale(1.2); }
   
-  /* QR-Code Modal */
-  .qr-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.7); backdrop-filter:blur(4px); align-items:center; justify-content:center; z-index:9999; }
-  .qr-modal.active { display:flex; }
-  .qr-content { background:#111; padding:24px 28px; border-radius:16px; border:2px solid var(--acc); box-shadow: 0 8px 32px rgba(0,0,0,.8); text-align:center; }
-  .qr-content h3 { margin:0 0 16px; color:var(--acc2); font-size:20px; }
-  .qr-content canvas { border-radius:8px; background:#fff; padding:12px; }
-  .qr-content p { margin:12px 0 0; font-size:13px; color:var(--muted); }
+  /* QR-Code fixed in corner */
+  .qr-fixed { position:fixed; bottom:20px; right:20px; background:#13161a; padding:16px; border-radius:16px; border:2px solid var(--acc); box-shadow: 0 8px 32px rgba(0,0,0,.6); z-index:999; text-align:center; }
+  .qr-fixed h3 { margin:0 0 12px; color:var(--acc); font-size:14px; font-weight:700; letter-spacing:.5px; }
+  .qr-fixed canvas { border-radius:8px; background:#fff; padding:8px; display:block; }
+  .qr-fixed p { margin:10px 0 0; font-size:11px; color:var(--muted); max-width:150px; line-height:1.4; }
+  body.tv-mode .qr-fixed { bottom:30px; right:30px; padding:20px; }
+  body.tv-mode .qr-fixed h3 { font-size:16px; margin-bottom:14px; }
+  body.tv-mode .qr-fixed canvas { padding:10px; }
+  body.tv-mode .qr-fixed p { font-size:13px; max-width:180px; }
 </style>
 </head>
 <body>
@@ -115,7 +117,6 @@
       <h1>🎯 AS2 Hochberg Dartturnier · Live Monitor</h1>
       <div class="controls">
         <button id="tvBtn" class="btn-control">📺 TV-Modus</button>
-        <button id="qrBtn" class="btn-control">📱 QR-Code</button>
         <div class="updated" id="updated">–</div>
       </div>
     </header>
@@ -174,13 +175,11 @@
     </div>
   </div>
 
-  <!-- QR-Code Modal -->
-  <div class="qr-modal" id="qrModal">
-    <div class="qr-content">
-      <h3>📱 Scan für Monitor</h3>
-      <canvas id="qrCanvas"></canvas>
-      <p>Spieler & Zuschauer können den Monitor live mitverfolgen</p>
-    </div>
+  <!-- QR-Code fixed in corner -->
+  <div class="qr-fixed">
+    <h3>📱 LIVE MONITOR</h3>
+    <canvas id="qrCanvas"></canvas>
+    <p>Scan für Live-Scores</p>
   </div>
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
@@ -192,31 +191,22 @@ document.getElementById('tvBtn')?.addEventListener('click', ()=>{
   btn.textContent = document.body.classList.contains('tv-mode') ? '📺 Normal' : '📺 TV-Modus';
 });
 
-/** === QR-Code Button === */
-const qrModal = document.getElementById('qrModal');
+/** === QR-Code Auto-Generate === */
 const qrCanvas = document.getElementById('qrCanvas');
-let qrGenerated = false;
 
 function generateQR() {
   if (!qrCanvas) return;
   
   // Warte bis QRCode Library geladen ist
   if (typeof QRCode === 'undefined') {
-    qrCanvas.parentElement.innerHTML = '<p style="color:#fff">⏳ QR-Library lädt...</p>';
     setTimeout(generateQR, 200); // Retry nach 200ms
     return;
   }
   
   try {
-    // Clear previous QR code
-    const ctx = qrCanvas.getContext('2d');
-    if (ctx) {
-      ctx.clearRect(0, 0, qrCanvas.width, qrCanvas.height);
-    }
-    
     QRCode.toCanvas(qrCanvas, window.location.href, { 
-      width: 220, 
-      margin: 2,
+      width: 140, 
+      margin: 1,
       color: {
         dark: '#000000',
         light: '#FFFFFF'
@@ -224,27 +214,15 @@ function generateQR() {
     }, (error) => {
       if (error) {
         console.error('QR Code Error:', error);
-        qrCanvas.parentElement.innerHTML = '<p style="color:red">❌ QR-Code Fehler</p><p style="font-size:12px; word-break:break-all;">URL: ' + window.location.href + '</p>';
-      } else {
-        qrGenerated = true;
       }
     });
   } catch (err) {
     console.error('QR Generation failed:', err);
-    qrCanvas.parentElement.innerHTML = '<p style="color:red">❌ Fehler: ' + err.message + '</p><p style="font-size:12px; word-break:break-all;">URL: ' + window.location.href + '</p>';
   }
 }
 
-document.getElementById('qrBtn')?.addEventListener('click', ()=>{
-  qrModal.classList.add('active');
-  if (!qrGenerated) {
-    generateQR();
-  }
-});
-
-qrModal?.addEventListener('click', (e)=> {
-  if(e.target === qrModal) qrModal.classList.remove('active');
-});
+// Generate QR code on page load
+generateQR();
 
 /** === Ping Sound bei Live-Match === */
 let prevLiveKeys = new Set();
