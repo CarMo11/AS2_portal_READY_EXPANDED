@@ -47,6 +47,82 @@ function onOpen() {
     .addToUi();
 }
 
+// ======= AUTO-SYNC BEI STATUS-ÄNDERUNG =======
+function onEdit(e) {
+  if (!e) return;
+  
+  const sheet = e.source.getActiveSheet();
+  const sheetName = sheet.getName();
+  const range = e.range;
+  const col = range.getColumn();
+  const row = range.getRow();
+  
+  // Nur reagieren wenn "LIVE – Teams" Sheet UND Spalte P (16) geändert wurde
+  if (sheetName !== TABS.LIVE_TEAMS || col !== 16 || row === 1) return;
+  
+  // Status wurde geändert → Vorrunde synchronisieren
+  try {
+    syncVorrundeOnStatusChange();
+  } catch (err) {
+    console.error('Auto-Sync Fehler:', err);
+  }
+}
+
+// Synchronisiert Vorrunde basierend auf Status in LIVE – Teams
+function syncVorrundeOnStatusChange() {
+  const ss = SpreadsheetApp.getActive();
+  const liveTeams = ss.getSheetByName(TABS.LIVE_TEAMS);
+  const vorEingabe = ss.getSheetByName(TABS.VOR_EINGABE);
+  
+  if (!liveTeams || !vorEingabe) return;
+  
+  // Alle Teams mit Status "bezahlt" holen
+  const data = liveTeams.getDataRange().getValues();
+  const paidTeams = [];
+  
+  for (let i = 1; i < data.length; i++) {
+    const teamName = (data[i][1] || '').toString().trim(); // Spalte B = Teamname
+    const status = (data[i][15] || '').toString().toLowerCase().trim(); // Spalte P = Status
+    
+    if (teamName && status === 'bezahlt') {
+      paidTeams.push(teamName);
+    }
+  }
+  
+  // Vorrunde – Eingabe aktualisieren
+  const currentData = vorEingabe.getDataRange().getValues();
+  const currentTeams = currentData.slice(1).map(row => row[0]).filter(t => t);
+  
+  // Teams die entfernt werden müssen (nicht mehr bezahlt)
+  const teamsToRemove = currentTeams.filter(t => !paidTeams.includes(t));
+  
+  // Teams die hinzugefügt werden müssen (neu bezahlt)
+  const teamsToAdd = paidTeams.filter(t => !currentTeams.includes(t));
+  
+  // Entfernen von Teams die nicht mehr bezahlt sind
+  if (teamsToRemove.length > 0) {
+    for (let i = currentData.length - 1; i >= 1; i--) {
+      const teamName = currentData[i][0];
+      if (teamsToRemove.includes(teamName)) {
+        vorEingabe.deleteRow(i + 1);
+      }
+    }
+  }
+  
+  // Hinzufügen von neu bezahlten Teams
+  if (teamsToAdd.length > 0) {
+    teamsToAdd.forEach(team => {
+      const newRow = [team, 0, 0, 0, 0, ''];
+      vorEingabe.appendRow(newRow);
+    });
+  }
+  
+  // Vorrunde-Tabelle neu berechnen wenn Änderungen
+  if (teamsToRemove.length > 0 || teamsToAdd.length > 0) {
+    recalcVorrunde();
+  }
+}
+
 // ======= SETUP (with formatting!) =======
 function setupAll() {
   const ss = SpreadsheetApp.getActive();
