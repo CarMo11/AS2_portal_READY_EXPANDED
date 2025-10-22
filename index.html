@@ -248,25 +248,50 @@
       }
 
       function renderRows(rows){
-        elCount.textContent = (rows[0] && rows[0][1]) ? rows[0][1] : '–';
-        elFree.textContent  = (rows[1] && rows[1][1]) ? rows[1][1] : '–';
-        elOpen.textContent  = (rows[2] && rows[2][1]) ? rows[2][1] : '–';
-
-        let headerIdx = rows.findIndex(r => (r[0] || '').toLowerCase() === 'bezahlt');
-        if (headerIdx === -1) headerIdx = 4;
-
-        paidUL.innerHTML = '';
-        openUL.innerHTML = '';
-        for (let i = headerIdx + 1; i < rows.length; i++){
-          const paid = rows[i][0] || '';
-          const open = rows[i][1] || '';
-          if (paid){
-            const li = document.createElement('li'); li.textContent = paid; paidUL.appendChild(li);
-          }
-          if (open){
-            const li = document.createElement('li'); li.textContent = open; openUL.appendChild(li);
+        // Neue einfache Logik: Nur Teams aus Spalte A (ab Zeile 2)
+        const teams = [];
+        
+        // Header finden (z.B. "Bezahlt", "Team", etc.)
+        let headerIdx = 0;
+        for (let i = 0; i < Math.min(rows.length, 5); i++) {
+          const cell = (rows[i][0] || '').toLowerCase().trim();
+          if (cell.includes('bezahlt') || cell.includes('team') || cell === 'teamname') {
+            headerIdx = i;
+            break;
           }
         }
+        
+        // Teams sammeln (ab Header + 1)
+        for (let i = headerIdx + 1; i < rows.length; i++){
+          const teamName = (rows[i][0] || '').trim();
+          if (teamName && teamName.length > 1) {
+            teams.push(teamName);
+          }
+        }
+        
+        // Stats aktualisieren
+        const count = teams.length;
+        const maxTeams = 16; // Anpassen nach Bedarf
+        const free = Math.max(0, maxTeams - count);
+        
+        elCount.textContent = count;
+        elFree.textContent = free;
+        elOpen.textContent = '0'; // Keine offenen Anmeldungen mehr
+        
+        // Teams anzeigen
+        paidUL.innerHTML = '';
+        if (teams.length === 0) {
+          paidUL.innerHTML = '<li>Noch keine Anmeldungen</li>';
+        } else {
+          teams.forEach(team => {
+            const li = document.createElement('li');
+            li.textContent = team;
+            paidUL.appendChild(li);
+          });
+        }
+        
+        // Keine offenen Anmeldungen
+        openUL.innerHTML = '';
       }
 
       async function loadLive(){
