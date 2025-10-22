@@ -320,15 +320,19 @@ function renderVorrunde(rows){
   if (!infoBox) {
     infoBox = document.createElement('div');
     infoBox.className = 'seed-info';
-    infoBox.style.cssText = 'background: rgba(230,126,34,.1); border: 1px solid rgba(230,126,34,.3); border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 14px; color: var(--muted);';
-    infoBox.innerHTML = '🏆 <strong>Top 4 Teams → Seed A</strong> | 📊 <strong>Platz 5-8 → Seed B</strong>';
+    infoBox.style.cssText = 'background: rgba(230,126,34,.1); border: 1px solid rgba(230,126,34,.3); border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 15px; color: var(--txt); display: flex; align-items: center; justify-content: center; gap: 20px;';
+    infoBox.innerHTML = '<span style="font-weight: 700; color: var(--acc);">🏆 Top 4 → Seed A</span><span style="color: var(--muted);">|</span><span style="font-weight: 700; color: #9fb0c3;">📊 Platz 5-8 → Seed B</span>';
     container.insertBefore(infoBox, tbl);
   }
 
   const thead = document.createElement('thead');
   const hr = document.createElement('tr');
-  (rows[0]).forEach(h => {
-    const th=document.createElement('th'); th.textContent=h; hr.appendChild(th);
+  // Header rendern, aber "Seed (A/B)" Spalte verstecken
+  (rows[0]).forEach((h, idx) => {
+    if (idx === 5) return; // "Seed (A/B)" Spalte überspringen
+    const th=document.createElement('th'); 
+    th.textContent=h; 
+    hr.appendChild(th);
   });
   thead.appendChild(hr);
   tbl.appendChild(thead);
@@ -338,15 +342,10 @@ function renderVorrunde(rows){
     const tr=document.createElement('tr');
     if (i<=4) tr.classList.add('leader'); // Top 4 hervorheben (Seed A)
     rows[i].forEach((val, idx)=>{
+      if (idx === 5) return; // "Seed (A/B)" Spalte überspringen
       const td=document.createElement('td');
       td.textContent = val;
       if (idx===0 || idx===1) td.style.fontWeight='800'; // Team + Rang
-      // Seed-Spalte mit Emoji
-      if (idx === 5 && val) { // Seed (A/B) Spalte
-        td.textContent = val === 'A' ? '🏆 A' : '📊 B';
-        td.style.fontWeight = '700';
-        td.style.color = val === 'A' ? 'var(--acc)' : '#9fb0c3';
-      }
       tr.appendChild(td);
     });
     tbody.appendChild(tr);
