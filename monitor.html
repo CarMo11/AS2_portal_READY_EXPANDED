@@ -136,16 +136,16 @@
             <div style="padding: 12px 16px 20px; overflow:auto; max-height: 32vh;">
               <table class="table" id="aTable"><tr><td>Lädt...</td></tr></table>
             </div>
-            <h3 style="margin-top:12px;padding: 12px 16px;border-bottom: 2px solid var(--acc);border-top:1px solid rgba(255,255,255,.08);background: rgba(230,126,34,.05);font-weight:700">📋 Gruppe A · Spiele</h3>
-            <div class="fixtures" id="aGames" style="max-height:32vh;overflow:auto"></div>
+            <h3 style="margin-top:12px;padding: 12px 16px;border-bottom: 2px solid var(--acc);border-top:1px solid rgba(255,255,255,.08);background: rgba(230,126,34,.05);font-weight:700">📋 Gruppe A · Anstehende Spiele</h3>
+            <div class="fixtures" id="aGames"></div>
           </div>
           <div class="panel">
             <h3>🏆 Gruppe B · Tabelle</h3>
             <div style="padding: 12px 16px 20px; overflow:auto; max-height: 32vh;">
               <table class="table" id="bTable"><tr><td>Lädt...</td></tr></table>
             </div>
-            <h3 style="margin-top:12px;padding: 12px 16px;border-bottom: 2px solid var(--acc);border-top:1px solid rgba(255,255,255,.08);background: rgba(230,126,34,.05);font-weight:700">📋 Gruppe B · Spiele</h3>
-            <div class="fixtures" id="bGames" style="max-height:32vh;overflow:auto"></div>
+            <h3 style="margin-top:12px;padding: 12px 16px;border-bottom: 2px solid var(--acc);border-top:1px solid rgba(255,255,255,.08);background: rgba(230,126,34,.05);font-weight:700">📋 Gruppe B · Anstehende Spiele</h3>
+            <div class="fixtures" id="bGames"></div>
           </div>
           <div class="panel">
             <h3>🎯 Boards · Aktuell</h3>
@@ -332,6 +332,8 @@ function renderGames(targetId, rows){
   box.innerHTML = '';
   if(!rows || rows.length<2){ box.innerHTML='<div class="fixture"><div class="teams">Keine Spiele</div></div>'; return; }
 
+  let hasUpcoming = false;
+  
   for(let i=1;i<rows.length;i++){
     const [match, board, t1, t2, l1, l2] = rows[i];
     const sc1 = (l1||'') === '' ? '–' : l1;
@@ -339,6 +341,11 @@ function renderGames(targetId, rows){
     const max = Math.max(+l1||0, +l2||0);
     const cls = max>=2 ? 'done' : ((sc1!=='–' || sc2!=='–') ? 'live' : 'pending');
     const isLive = cls === 'live';
+
+    // NUR anstehende (pending) oder laufende (live) Matches zeigen
+    if (cls === 'done') continue; // Fertige Matches überspringen!
+    
+    hasUpcoming = true;
 
     const fx = document.createElement('div');
     fx.className = 'fixture' + (isLive ? ' live' : '');
@@ -351,6 +358,10 @@ function renderGames(targetId, rows){
       <div class="score ${cls}">${sc1} : ${sc2}</div>
     `;
     box.appendChild(fx);
+  }
+  
+  if (!hasUpcoming) {
+    box.innerHTML = '<div class="fixture"><div class="teams" style="color:#4ade80">✅ Alle Spiele beendet!</div></div>';
   }
 }
 
@@ -509,89 +520,10 @@ document.addEventListener('keydown', e=>{
   if(e.key==='2') showView(1); // 2 = Hauptrunde
 });
 
-/** AUTO-SCROLL für scrollbare Bereiche */
-const autoScrollContainers = [];
-const scrollStates = new Map(); // Tracking für jeden Container
-
-function initAutoScroll() {
-  // Alle scrollbaren Bereiche finden
-  autoScrollContainers.length = 0;
-  const selectors = [
-    '#aGames',
-    '#bGames',
-    '.fixtures'
-  ];
-  
-  selectors.forEach(sel => {
-    document.querySelectorAll(sel).forEach(el => {
-      if (el.scrollHeight > el.clientHeight + 10) {
-        // Nur wenn tatsächlich scrollbar nötig (10px Buffer)
-        if (!autoScrollContainers.includes(el)) {
-          autoScrollContainers.push(el);
-          scrollStates.set(el, { 
-            direction: 'down', 
-            pauseUntil: 0,
-            scrollSpeed: 0.5 // Langsamer = besser lesbar
-          });
-        }
-      }
-    });
-  });
-  
-  console.log('🔄 Auto-Scroll aktiviert für', autoScrollContainers.length, 'Container');
-}
-
-function autoScrollStep() {
-  const now = Date.now();
-  
-  autoScrollContainers.forEach(container => {
-    if (!container || container.scrollHeight <= container.clientHeight) return;
-    
-    const state = scrollStates.get(container);
-    if (!state || now < state.pauseUntil) return; // Pause aktiv
-    
-    const maxScroll = container.scrollHeight - container.clientHeight;
-    const currentScroll = container.scrollTop;
-    
-    if (state.direction === 'down') {
-      // Runter scrollen
-      if (currentScroll < maxScroll - 5) {
-        container.scrollTop = currentScroll + state.scrollSpeed;
-      } else {
-        // Unten angekommen → Pause → dann hoch
-        state.direction = 'up';
-        state.pauseUntil = now + 3000; // 3 Sek Pause unten
-      }
-    } else {
-      // Hoch scrollen
-      if (currentScroll > 5) {
-        container.scrollTop = currentScroll - state.scrollSpeed;
-      } else {
-        // Oben angekommen → Pause → dann runter
-        state.direction = 'down';
-        state.pauseUntil = now + 3000; // 3 Sek Pause oben
-      }
-    }
-  });
-}
-
-// Auto-Scroll nach jedem Refresh neu initialisieren
-const originalRefreshAll = refreshAll;
-refreshAll = async function() {
-  await originalRefreshAll();
-  // Kurz warten damit Content geladen ist
-  setTimeout(() => {
-    initAutoScroll();
-  }, 1000);
-};
-
 /** START */
 console.log('🎯 AS2 Monitor gestartet');
 refreshAll();
 setInterval(refreshAll, 30000); // alle 30s Daten neu laden
-
-// Auto-Scroll starten (alle 50ms = sanftes Scrollen)
-setInterval(autoScrollStep, 50);
 </script>
 </body>
 </html>
