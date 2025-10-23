@@ -511,6 +511,7 @@ document.addEventListener('keydown', e=>{
 
 /** AUTO-SCROLL für scrollbare Bereiche */
 const autoScrollContainers = [];
+const scrollStates = new Map(); // Tracking für jeden Container
 
 function initAutoScroll() {
   // Alle scrollbaren Bereiche finden
@@ -518,40 +519,58 @@ function initAutoScroll() {
   const selectors = [
     '#aGames',
     '#bGames',
-    '.fixtures',
-    'div[style*="overflow:auto"]'
+    '.fixtures'
   ];
   
   selectors.forEach(sel => {
     document.querySelectorAll(sel).forEach(el => {
-      if (el.scrollHeight > el.clientHeight) {
-        // Nur wenn tatsächlich scrollbar nötig
+      if (el.scrollHeight > el.clientHeight + 10) {
+        // Nur wenn tatsächlich scrollbar nötig (10px Buffer)
         if (!autoScrollContainers.includes(el)) {
           autoScrollContainers.push(el);
+          scrollStates.set(el, { 
+            direction: 'down', 
+            pauseUntil: 0,
+            scrollSpeed: 0.5 // Langsamer = besser lesbar
+          });
         }
       }
     });
   });
   
-  console.log('Auto-Scroll aktiviert für', autoScrollContainers.length, 'Container');
+  console.log('🔄 Auto-Scroll aktiviert für', autoScrollContainers.length, 'Container');
 }
 
 function autoScrollStep() {
+  const now = Date.now();
+  
   autoScrollContainers.forEach(container => {
     if (!container || container.scrollHeight <= container.clientHeight) return;
     
+    const state = scrollStates.get(container);
+    if (!state || now < state.pauseUntil) return; // Pause aktiv
+    
     const maxScroll = container.scrollHeight - container.clientHeight;
     const currentScroll = container.scrollTop;
-    const step = 1; // Pixel pro Schritt
     
-    // Sanftes Scrollen nach unten
-    if (currentScroll < maxScroll - 5) {
-      container.scrollTop = currentScroll + step;
+    if (state.direction === 'down') {
+      // Runter scrollen
+      if (currentScroll < maxScroll - 5) {
+        container.scrollTop = currentScroll + state.scrollSpeed;
+      } else {
+        // Unten angekommen → Pause → dann hoch
+        state.direction = 'up';
+        state.pauseUntil = now + 3000; // 3 Sek Pause unten
+      }
     } else {
-      // Am Ende angekommen → Zurück nach oben
-      setTimeout(() => {
-        container.scrollTo({ top: 0, behavior: 'smooth' });
-      }, 2000); // 2 Sek warten bevor zurück
+      // Hoch scrollen
+      if (currentScroll > 5) {
+        container.scrollTop = currentScroll - state.scrollSpeed;
+      } else {
+        // Oben angekommen → Pause → dann runter
+        state.direction = 'down';
+        state.pauseUntil = now + 3000; // 3 Sek Pause oben
+      }
     }
   });
 }
@@ -563,7 +582,7 @@ refreshAll = async function() {
   // Kurz warten damit Content geladen ist
   setTimeout(() => {
     initAutoScroll();
-  }, 500);
+  }, 1000);
 };
 
 /** START */
