@@ -227,7 +227,7 @@
   <script>
     // Live-Anmeldestand
     (() => {
-      const CSV_URL = "https://docs.google.com/spreadsheets/d/11qd00fEEVDIWbXl8Rx6A0vvCD8WHK2FiiXVqaxtuKDk/gviz/tq?tqx=out:csv&gid=0";
+      const CSV_URL = "https://docs.google.com/spreadsheets/d/11qd00fEEVDIWbXl8Rx6A0vvCD8WHK2FiiXVqaxtuKDk/gviz/tq?tqx=out:csv&sheet=LIVE%20%E2%80%93%20Teams";
       
       const elCount = document.getElementById('liveCount');
       const elFree  = document.getElementById('liveFree');
@@ -259,10 +259,10 @@
         const openTeams = [];
         
         // Header ist immer Zeile 0, Teams ab Zeile 1
-        // Spalte B (Index 1) = Teamname, Spalte P (Index 15) = Status
+        // Spalte A (Index 0) = Status, Spalte B (Index 1) = Teamname
         for (let i = 1; i < rows.length; i++){
-          const teamName = (rows[i][1] || '').trim(); // Spalte B
-          const statusRaw = (rows[i][15] || '').toLowerCase().trim(); // Spalte P = Status
+          const statusRaw = (rows[i][0] || '').toLowerCase().trim(); // Spalte A = Status
+          const teamName = (rows[i][1] || '').trim(); // Spalte B = Teamname
           
           if (teamName && teamName.length > 2) {
             // Tolerante Status-Erkennung (erkennt auch "Bezahlt ✅", "bezahlt (bar)" etc.)
