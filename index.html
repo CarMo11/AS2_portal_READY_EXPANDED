@@ -262,13 +262,20 @@
         // Spalte B (Index 1) = Teamname, Spalte P (Index 15) = Status
         for (let i = 1; i < rows.length; i++){
           const teamName = (rows[i][1] || '').trim(); // Spalte B
-          const status = (rows[i][15] || '').toLowerCase().trim(); // Spalte P = Status
+          const statusRaw = (rows[i][15] || '').toLowerCase().trim(); // Spalte P = Status
           
           if (teamName && teamName.length > 2) {
-            if (status === 'bezahlt') {
+            // Tolerante Status-Erkennung (erkennt auch "Bezahlt ✅", "bezahlt (bar)" etc.)
+            const isPaid = statusRaw.includes('bez') || statusRaw.includes('paid');
+            const isOpen = statusRaw === '' || statusRaw.includes('off');
+            
+            if (isPaid) {
               paidTeams.push(teamName);
-            } else if (status === 'offen' || status === '') {
-              // Status "offen" oder leer → Offene Anmeldungen
+            } else if (isOpen) {
+              openTeams.push(teamName);
+            } else {
+              // Unbekannter Status → als "offen" behandeln
+              console.warn('Unbekannter Status für Team', teamName, ':', statusRaw);
               openTeams.push(teamName);
             }
           }
@@ -279,7 +286,7 @@
         const maxTeams = 10; // Maximale Teamanzahl
         const free = Math.max(0, maxTeams - totalCount);
         
-        elCount.textContent = paidTeams.length; // Nur bezahlte Teams zählen
+        elCount.textContent = totalCount; // GESAMT-Anmeldungen (wie vorher)
         elFree.textContent = free;
         elOpen.textContent = openTeams.length;
         
