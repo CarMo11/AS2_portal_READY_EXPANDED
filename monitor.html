@@ -509,10 +509,70 @@ document.addEventListener('keydown', e=>{
   if(e.key==='2') showView(1); // 2 = Hauptrunde
 });
 
+/** AUTO-SCROLL für scrollbare Bereiche */
+const autoScrollContainers = [];
+
+function initAutoScroll() {
+  // Alle scrollbaren Bereiche finden
+  autoScrollContainers.length = 0;
+  const selectors = [
+    '#aGames',
+    '#bGames',
+    '.fixtures',
+    'div[style*="overflow:auto"]'
+  ];
+  
+  selectors.forEach(sel => {
+    document.querySelectorAll(sel).forEach(el => {
+      if (el.scrollHeight > el.clientHeight) {
+        // Nur wenn tatsächlich scrollbar nötig
+        if (!autoScrollContainers.includes(el)) {
+          autoScrollContainers.push(el);
+        }
+      }
+    });
+  });
+  
+  console.log('Auto-Scroll aktiviert für', autoScrollContainers.length, 'Container');
+}
+
+function autoScrollStep() {
+  autoScrollContainers.forEach(container => {
+    if (!container || container.scrollHeight <= container.clientHeight) return;
+    
+    const maxScroll = container.scrollHeight - container.clientHeight;
+    const currentScroll = container.scrollTop;
+    const step = 1; // Pixel pro Schritt
+    
+    // Sanftes Scrollen nach unten
+    if (currentScroll < maxScroll - 5) {
+      container.scrollTop = currentScroll + step;
+    } else {
+      // Am Ende angekommen → Zurück nach oben
+      setTimeout(() => {
+        container.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 2000); // 2 Sek warten bevor zurück
+    }
+  });
+}
+
+// Auto-Scroll nach jedem Refresh neu initialisieren
+const originalRefreshAll = refreshAll;
+refreshAll = async function() {
+  await originalRefreshAll();
+  // Kurz warten damit Content geladen ist
+  setTimeout(() => {
+    initAutoScroll();
+  }, 500);
+};
+
 /** START */
 console.log('🎯 AS2 Monitor gestartet');
 refreshAll();
 setInterval(refreshAll, 30000); // alle 30s Daten neu laden
+
+// Auto-Scroll starten (alle 50ms = sanftes Scrollen)
+setInterval(autoScrollStep, 50);
 </script>
 </body>
 </html>
