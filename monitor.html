@@ -115,6 +115,12 @@
     <div class="views">
       <!-- VIEW 1: Vorrunde -->
       <section class="view active" id="view-vorrunde">
+        <!-- Team-Board-Zuweisungen -->
+        <div class="panel" style="margin-bottom:20px">
+          <h3>📋 Vorrunde · Teams & Boards</h3>
+          <div id="vorrundeTeamBoards" class="fixtures"></div>
+        </div>
+        
         <div class="panel">
           <h3>🎯 Vorrunde · Ranking nach 4 Läufen</h3>
           <div style="padding: 12px 16px 20px; overflow:auto; max-height: 75vh;">
@@ -206,6 +212,7 @@ function checkNewLiveMatches(aGm, bGm){
 /** === CSV-URLs === */
 const CSV = {
   vorrunde: "https://docs.google.com/spreadsheets/d/11qd00fEEVDIWbXl8Rx6A0vvCD8WHK2FiiXVqaxtuKDk/gviz/tq?tqx=out:csv&sheet=Vorrunde%20%E2%80%93%20Tabelle",
+  vorrundeEingabe: "https://docs.google.com/spreadsheets/d/11qd00fEEVDIWbXl8Rx6A0vvCD8WHK2FiiXVqaxtuKDk/gviz/tq?tqx=out:csv&sheet=Vorrunde%20%E2%80%93%20Eingabe",
   aTable: "https://docs.google.com/spreadsheets/d/11qd00fEEVDIWbXl8Rx6A0vvCD8WHK2FiiXVqaxtuKDk/gviz/tq?tqx=out:csv&sheet=A%20%E2%80%93%20Tabelle",
   bTable: "https://docs.google.com/spreadsheets/d/11qd00fEEVDIWbXl8Rx6A0vvCD8WHK2FiiXVqaxtuKDk/gviz/tq?tqx=out:csv&sheet=B%20%E2%80%93%20Tabelle",
   aGames: "https://docs.google.com/spreadsheets/d/11qd00fEEVDIWbXl8Rx6A0vvCD8WHK2FiiXVqaxtuKDk/gviz/tq?tqx=out:csv&sheet=A%20%E2%80%93%20Ergebnisse",
