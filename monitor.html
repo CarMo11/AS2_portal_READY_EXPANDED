@@ -310,12 +310,12 @@ function renderVorrunde(rows){
   tbl.appendChild(tbody);
 }
 
-/** RENDER: Vorrunde Team-Board-Zuweisungen */
+/** RENDER: Vorrunde Team-Board-Zuweisungen (TV-optimiert) */
 function renderVorrundeTeamBoards(rows){
   const box = document.getElementById('vorrundeTeamBoards');
   box.innerHTML = '';
   if(!rows || rows.length<2){ 
-    box.innerHTML='<div class="fixture"><div class="teams">Keine Teams eingetragen</div></div>'; 
+    box.innerHTML='<div style="padding:16px;color:#999">Keine Teams eingetragen</div>'; 
     return; 
   }
 
@@ -326,16 +326,13 @@ function renderVorrundeTeamBoards(rows){
     
     if(!team) continue; // Leere Zeilen überspringen
     
-    const fx = document.createElement('div');
-    fx.className = 'fixture';
-    fx.innerHTML = `
-      <div class="fx-left">
-        <span class="badge board">${board || '—'}</span>
-        <span class="teams">${team}</span>
-      </div>
-      <div class="score pending">Läuft</div>
+    const item = document.createElement('div');
+    item.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 12px;margin:6px 0;background:rgba(255,255,255,.04);border-radius:8px;border-left:3px solid var(--acc)';
+    item.innerHTML = `
+      <span class="badge board" style="min-width:48px;text-align:center">${board || '—'}</span>
+      <span style="font-weight:600;font-size:1.05rem">${team}</span>
     `;
-    box.appendChild(fx);
+    box.appendChild(item);
   }
 }
 
