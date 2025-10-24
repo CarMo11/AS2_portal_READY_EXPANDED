@@ -553,7 +553,20 @@ function showView(i){
   viewIdx = (i + views.length) % views.length;
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById(views[viewIdx]).classList.add('active');
-  document.querySelectorAll('#dotnav .dot').forEach((d,idx)=> d.classList.toggle('active', idx===viewIdx));
+  
+  // Button-Highlights aktualisieren
+  document.querySelectorAll('[id^="navBtn"]').forEach((btn, idx) => {
+    if(idx === viewIdx){
+      btn.style.background = 'var(--acc)';
+      btn.style.borderColor = 'var(--acc)';
+      btn.style.fontWeight = '700';
+    } else {
+      btn.style.background = 'rgba(255,255,255,.05)';
+      btn.style.borderColor = 'rgba(255,255,255,.1)';
+      btn.style.fontWeight = '500';
+    }
+  });
+  
   console.log('View:', ['Vorrunde','Hauptrunde'][viewIdx]);
 }
 
