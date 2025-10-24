@@ -518,14 +518,16 @@ function renderSideBets(rows){
 
 /** DATEN HOLEN & RENDERN */
 async function refreshAll(){
-  const [vorrunde, aTab, bTab, aGm, bGm, sidebets] = await Promise.all([
+  const [vorrunde, vorrundeEingabe, aTab, bTab, aGm, bGm, sidebets] = await Promise.all([
     fetchCSV(CSV.vorrunde),
+    fetchCSV(CSV.vorrundeEingabe),
     fetchCSV(CSV.aTable),
     fetchCSV(CSV.bTable),
     fetchCSV(CSV.aGames),
     fetchCSV(CSV.bGames),
     fetchCSV(CSV.sidebets),
   ]);
+  renderVorrundeTeamBoards(vorrundeEingabe);
   renderVorrunde(vorrunde);
   renderTable('aTable', aTab);
   renderTable('bTable', bTab);
