@@ -308,6 +308,35 @@ function renderVorrunde(rows){
   tbl.appendChild(tbody);
 }
 
+/** RENDER: Vorrunde Team-Board-Zuweisungen */
+function renderVorrundeTeamBoards(rows){
+  const box = document.getElementById('vorrundeTeamBoards');
+  box.innerHTML = '';
+  if(!rows || rows.length<2){ 
+    box.innerHTML='<div class="fixture"><div class="teams">Keine Teams eingetragen</div></div>'; 
+    return; 
+  }
+
+  // Spalte 0 = Team, Spalte 1 = Board
+  for(let i=1; i<rows.length; i++){
+    const team = (rows[i][0] || '').trim();
+    const board = (rows[i][1] || '').trim();
+    
+    if(!team) continue; // Leere Zeilen überspringen
+    
+    const fx = document.createElement('div');
+    fx.className = 'fixture';
+    fx.innerHTML = `
+      <div class="fx-left">
+        <span class="badge board">${board || '—'}</span>
+        <span class="teams">${team}</span>
+      </div>
+      <div class="score pending">Läuft</div>
+    `;
+    box.appendChild(fx);
+  }
+}
+
 /** RENDER: Tabelle (A/B) */
 function renderTable(targetId, rows){
   const tbl = document.getElementById(targetId);
