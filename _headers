@@ -3,6 +3,10 @@
   Access-Control-Allow-Methods: GET, HEAD, OPTIONS
   Access-Control-Allow-Headers: *
 
+/favicon.svg
+  Content-Type: image/svg+xml
+  Cache-Control: public, max-age=31536000
+
 /monitor.html
   Access-Control-Allow-Origin: *
   Access-Control-Allow-Methods: GET, HEAD, OPTIONS
