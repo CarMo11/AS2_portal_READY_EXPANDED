@@ -132,6 +132,14 @@ function handleVorrunde(ss, data) {
     Logger.log('Score-Log Fehler (Vorrunde): ' + err);
   }
 
+  // 🔄 LIVE-UPDATE: Vorrunde-Tabelle automatisch neu berechnen
+  try {
+    recalcVorrunde();  // Aus AS2 MASTER
+    Logger.log('✅ Vorrunde-Tabelle automatisch aktualisiert');
+  } catch (err) {
+    Logger.log('⚠️ recalcVorrunde() Fehler: ' + err);
+  }
+
   return jsonResponse(true, 'Vorrunden-Leg gespeichert.', {
     team: teamName,
     col: colIndex
