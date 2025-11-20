@@ -180,13 +180,6 @@
   </div>
 
 <script>
-/** === TV-Modus Button === */
-document.getElementById('tvBtn')?.addEventListener('click', ()=>{
-  document.body.classList.toggle('tv-mode');
-  const btn = document.getElementById('tvBtn');
-  btn.textContent = document.body.classList.contains('tv-mode') ? '📺 Normal' : '📺 TV-Modus';
-});
-
 /** === Ping Sound bei Live-Match === */
 let prevLiveKeys = new Set();
 function getLiveKeys(rows){
