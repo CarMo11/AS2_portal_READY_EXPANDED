@@ -160,11 +160,14 @@ POST-Daten:
 }
 
 Script:
-1. Öffnet "Vorrunde – Tabelle"
-2. Findet Team-Zeile (Spalte A)
-3. Sucht nächste freie Lauf-Spalte (C-H)
+1. Öffnet "Vorrunde – Eingabe"
+2. Findet Team-Zeile (Spalte A = Team)
+3. Sucht nächste freie Lauf-Spalte (C-H = Leg 1-6)
 4. Trägt Legs ein
 5. Gibt Erfolg zurück
+
+WICHTIG: Schreibt in "Vorrunde – Eingabe" (nicht in "Vorrunde – Tabelle")!
+"Vorrunde – Tabelle" wird automatisch berechnet aus "Vorrunde – Eingabe".
 ```
 
 ### **Hauptrunde-Modus:**
