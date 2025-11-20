@@ -289,13 +289,13 @@
     // Teams laden
     async function loadTeams() {
       try {
-        const res = await fetch(SHEET_URL_VORRUNDE_TABELLE + '&_=' + Date.now());
+        const res = await fetch(SHEET_URL_VORRUNDE_EINGABE + '&_=' + Date.now());
         const data = await res.text();
         const rows = parseCSV(data);
         
         teams = [];
         for (let i = 1; i < rows.length; i++) {
-          const team = (rows[i][0] || '').trim();
+          const team = (rows[i][0] || '').trim(); // Spalte A = Team
           if (team) teams.push(team);
         }
         
