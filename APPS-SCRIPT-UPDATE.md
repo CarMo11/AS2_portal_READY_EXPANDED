@@ -39,11 +39,11 @@ function doPost(e) {
 
 // VORRUNDE: Legs für Team eintragen
 function handleVorrunde(sheet, data) {
-  const targetSheet = sheet.getSheetByName('Vorrunde – Tabelle');
+  const targetSheet = sheet.getSheetByName('Vorrunde – Eingabe');
   
   if (!targetSheet) {
     return ContentService.createTextOutput(JSON.stringify({
-      ok: false, msg: 'Vorrunde-Sheet nicht gefunden'
+      ok: false, msg: 'Vorrunde-Eingabe Sheet nicht gefunden'
     })).setMimeType(ContentService.MimeType.JSON);
   }
   
@@ -64,7 +64,7 @@ function handleVorrunde(sheet, data) {
     })).setMimeType(ContentService.MimeType.JSON);
   }
   
-  // Finde nächste freie Lauf-Spalte (C, D, E, F, G, H für Läufe 1-6)
+  // Finde nächste freie Lauf-Spalte (C, D, E, F, G, H für Leg 1-6)
   let colIndex = -1;
   for (let col = 3; col <= 8; col++) { // C=3, H=8
     const val = targetSheet.getRange(rowIndex, col).getValue();
