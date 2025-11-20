@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AS2 Score-Eingabe</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <style>
@@ -13,7 +13,6 @@
       color: #e8eef5;
       min-height: 100vh;
       padding: 20px;
-      -webkit-font-smoothing: antialiased;
     }
     .container {
       max-width: 600px;
@@ -35,6 +34,31 @@
     .header p {
       color: #9fb0c3;
       font-size: 14px;
+    }
+    .mode-switch {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      background: #13161a;
+      padding: 8px;
+      border-radius: 12px;
+    }
+    .mode-btn {
+      flex: 1;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: 700;
+      border: 2px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.05);
+      color: #9fb0c3;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .mode-btn.active {
+      background: #00dca6;
+      border-color: #00dca6;
+      color: #0b0e13;
     }
     .form-container {
       background: #13161a;
@@ -136,63 +160,96 @@
       font-size: 14px;
       color: #9fb0c3;
     }
+    .legs-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
       <h1>🎯 AS2 Score-Eingabe</h1>
-      <p>Einfach Match auswählen und Score eintragen</p>
+      <p>Dein Team auswählen und Score eintragen</p>
+    </div>
+
+    <!-- Modus-Umschaltung -->
+    <div class="mode-switch">
+      <button class="mode-btn active" onclick="switchMode('vorrunde')">📋 Vorrunde</button>
+      <button class="mode-btn" onclick="switchMode('hauptrunde')">🏆 Hauptrunde</button>
     </div>
 
     <div id="messageBox"></div>
 
     <div class="form-container">
-      <div class="label">1. Dein Match auswählen</div>
-      <select id="matchSelect">
-        <option value="">Lädt Matches...</option>
+      <!-- Team-Auswahl (für beide Modi) -->
+      <div class="label">1. Dein Team auswählen</div>
+      <select id="teamSelect">
+        <option value="">Lädt Teams...</option>
       </select>
 
-      <div id="matchDetails" class="hidden">
-        <div class="label">2. Score eintragen (Best of 3)</div>
-        
-        <div id="team1Box" style="margin-bottom: 20px;">
-          <div style="font-size: 18px; font-weight: 700; color: #00dca6; margin-bottom: 12px;" id="team1Name">Team 1</div>
-          <div class="score-grid" id="team1Grid">
-            <button class="score-btn" onclick="selectScore(1, 0, this)">0</button>
-            <button class="score-btn" onclick="selectScore(1, 1, this)">1</button>
-            <button class="score-btn" onclick="selectScore(1, 2, this)">2</button>
-          </div>
-        </div>
+      <!-- VORRUNDE: Legs eintragen -->
+      <div id="vorrundeSection" class="hidden">
+        <div class="label">2. Legs eintragen (Lauf {{ currentRun }})</div>
+        <div class="legs-grid" id="legsGrid"></div>
+        <button class="submit-btn" onclick="submitVorrunde()">✅ Legs eintragen</button>
+      </div>
 
-        <div id="team2Box">
-          <div style="font-size: 18px; font-weight: 700; color: #00dca6; margin-bottom: 12px;" id="team2Name">Team 2</div>
-          <div class="score-grid" id="team2Grid">
-            <button class="score-btn" onclick="selectScore(2, 0, this)">0</button>
-            <button class="score-btn" onclick="selectScore(2, 1, this)">1</button>
-            <button class="score-btn" onclick="selectScore(2, 2, this)">2</button>
-          </div>
-        </div>
+      <!-- HAUPTRUNDE: Match + Score -->
+      <div id="hauptrundeSection" class="hidden">
+        <div class="label">2. Dein Match auswählen</div>
+        <select id="matchSelect">
+          <option value="">Wähle erst dein Team...</option>
+        </select>
 
-        <button class="submit-btn" onclick="submitScore()">✅ Score eintragen</button>
+        <div id="matchDetails" class="hidden">
+          <div class="label">3. Score eintragen (Best of 3)</div>
+          
+          <div style="margin-bottom: 20px;">
+            <div style="font-size: 18px; font-weight: 700; color: #00dca6; margin-bottom: 12px;" id="team1Name">Team 1</div>
+            <div class="score-grid" id="team1Grid">
+              <button class="score-btn" onclick="selectScore(1, 0, this)">0</button>
+              <button class="score-btn" onclick="selectScore(1, 1, this)">1</button>
+              <button class="score-btn" onclick="selectScore(1, 2, this)">2</button>
+            </div>
+          </div>
+
+          <div>
+            <div style="font-size: 18px; font-weight: 700; color: #00dca6; margin-bottom: 12px;" id="team2Name">Team 2</div>
+            <div class="score-grid" id="team2Grid">
+              <button class="score-btn" onclick="selectScore(2, 0, this)">0</button>
+              <button class="score-btn" onclick="selectScore(2, 1, this)">1</button>
+              <button class="score-btn" onclick="selectScore(2, 2, this)">2</button>
+            </div>
+          </div>
+
+          <button class="submit-btn" onclick="submitHauptrunde()">✅ Score eintragen</button>
+        </div>
       </div>
     </div>
 
     <div class="info-box">
-      💡 <strong>Tipp:</strong> Nach dem Eintragen wird der Score direkt im Live-Monitor angezeigt!
+      💡 <strong>Tipp:</strong> Der Score wird sofort im Live-Monitor angezeigt!
     </div>
   </div>
 
   <script>
-    // Google Sheets CSV URL (Hauptrunde Matches)
+    // Google Sheets CSV URLs
+    const SHEET_URL_VORRUNDE_TABELLE = "https://docs.google.com/spreadsheets/d/11qd00fEEVDIWbXl8Rx6A0vvCD8WHK2FiiXVqaxtuKDk/gviz/tq?tqx=out:csv&sheet=Vorrunde%20%E2%80%93%20Tabelle";
     const SHEET_URL_A = "https://docs.google.com/spreadsheets/d/11qd00fEEVDIWbXl8Rx6A0vvCD8WHK2FiiXVqaxtuKDk/gviz/tq?tqx=out:csv&sheet=A%20%E2%80%93%20Ergebnisse";
     const SHEET_URL_B = "https://docs.google.com/spreadsheets/d/11qd00fEEVDIWbXl8Rx6A0vvCD8WHK2FiiXVqaxtuKDk/gviz/tq?tqx=out:csv&sheet=B%20%E2%80%93%20Ergebnisse";
     
-    // Google Apps Script Web-App URL (siehe SETUP-SCORE-EINGABE.md)
+    // Google Apps Script Web-App URL
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw6pv1os8QgMt6nOMiFV6cw3PixRnIm9gPAbib9khUz_wh3um_TFVzOd_69o9I7E-6XNQ/exec";
     
+    let currentMode = 'vorrunde';
+    let teams = [];
     let matches = [];
+    let selectedTeam = null;
     let selectedMatch = null;
+    let selectedLegs = null;
     let score1 = null;
     let score2 = null;
 
@@ -213,8 +270,126 @@
       return rows;
     }
 
-    // Load matches
-    async function loadMatches() {
+    // Modus umschalten
+    function switchMode(mode) {
+      currentMode = mode;
+      document.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.textContent.includes(mode === 'vorrunde' ? 'Vorrunde' : 'Hauptrunde'));
+      });
+      
+      // Sections anzeigen/verstecken
+      document.getElementById('vorrundeSection').classList.toggle('hidden', mode !== 'vorrunde');
+      document.getElementById('hauptrundeSection').classList.toggle('hidden', mode !== 'hauptrunde');
+      
+      // Reset
+      document.getElementById('teamSelect').value = '';
+      selectedTeam = null;
+    }
+
+    // Teams laden
+    async function loadTeams() {
+      try {
+        const res = await fetch(SHEET_URL_VORRUNDE_TABELLE + '&_=' + Date.now());
+        const data = await res.text();
+        const rows = parseCSV(data);
+        
+        teams = [];
+        for (let i = 1; i < rows.length; i++) {
+          const team = (rows[i][0] || '').trim();
+          if (team) teams.push(team);
+        }
+        
+        renderTeamSelect();
+      } catch (error) {
+        console.error(error);
+        showMessage('Fehler beim Laden der Teams', 'error');
+      }
+    }
+
+    // Team-Dropdown rendern
+    function renderTeamSelect() {
+      const select = document.getElementById('teamSelect');
+      select.innerHTML = '<option value="">Team auswählen...</option>';
+      
+      teams.forEach(team => {
+        const opt = document.createElement('option');
+        opt.value = team;
+        opt.textContent = team;
+        select.appendChild(opt);
+      });
+      
+      select.onchange = () => {
+        selectedTeam = select.value;
+        if (!selectedTeam) return;
+        
+        if (currentMode === 'vorrunde') {
+          showVorrundeInput();
+        } else {
+          loadMatchesForTeam();
+        }
+      };
+    }
+
+    // VORRUNDE: Legs-Eingabe anzeigen
+    function showVorrundeInput() {
+      const grid = document.getElementById('legsGrid');
+      grid.innerHTML = '';
+      
+      // Legs 7-14
+      for (let i = 7; i <= 14; i++) {
+        const btn = document.createElement('button');
+        btn.className = 'score-btn';
+        btn.textContent = i;
+        btn.onclick = () => selectLegs(i, btn);
+        grid.appendChild(btn);
+      }
+      
+      document.getElementById('vorrundeSection').classList.remove('hidden');
+      selectedLegs = null;
+    }
+
+    function selectLegs(value, btn) {
+      document.querySelectorAll('#legsGrid .score-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedLegs = value;
+    }
+
+    async function submitVorrunde() {
+      if (!selectedTeam) {
+        showMessage('Bitte Team auswählen', 'error');
+        return;
+      }
+      if (selectedLegs === null) {
+        showMessage('Bitte Legs auswählen', 'error');
+        return;
+      }
+
+      try {
+        const response = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mode: 'vorrunde',
+            team: selectedTeam,
+            legs: selectedLegs
+          })
+        });
+
+        showMessage(`✅ ${selectedLegs} Legs für ${selectedTeam} eingetragen!`, 'success');
+        
+        // Reset
+        selectedLegs = null;
+        document.querySelectorAll('#legsGrid .score-btn').forEach(b => b.classList.remove('selected'));
+        
+      } catch (error) {
+        console.error(error);
+        showMessage('Fehler beim Senden. Bitte nochmal versuchen.', 'error');
+      }
+    }
+
+    // HAUPTRUNDE: Matches für Team laden
+    async function loadMatchesForTeam() {
       try {
         const [resA, resB] = await Promise.all([
           fetch(SHEET_URL_A + '&_=' + Date.now()),
@@ -230,6 +405,8 @@
         for (let i = 1; i < rowsA.length; i++) {
           const [match, board, t1, t2, l1, l2] = rowsA[i];
           if (!t1 || !t2) continue;
+          if (t1 !== selectedTeam && t2 !== selectedTeam) continue; // Nur Matches dieses Teams!
+          
           const isFinished = (l1 && l2 && Math.max(+l1, +l2) >= 2);
           matches.push({
             id: `A-${i}`,
@@ -246,6 +423,8 @@
         for (let i = 1; i < rowsB.length; i++) {
           const [match, board, t1, t2, l1, l2] = rowsB[i];
           if (!t1 || !t2) continue;
+          if (t1 !== selectedTeam && t2 !== selectedTeam) continue; // Nur Matches dieses Teams!
+          
           const isFinished = (l1 && l2 && Math.max(+l1, +l2) >= 2);
           matches.push({
             id: `B-${i}`,
@@ -265,16 +444,15 @@
       }
     }
 
-    // Render match dropdown
     function renderMatchSelect() {
       const select = document.getElementById('matchSelect');
       select.innerHTML = '<option value="">Match auswählen...</option>';
       
-      // Nur anstehende und laufende Matches
       const activeMatches = matches.filter(m => !m.finished);
       
       if (activeMatches.length === 0) {
-        select.innerHTML = '<option value="">Keine offenen Matches</option>';
+        select.innerHTML = '<option value="">Keine offenen Matches für dein Team</option>';
+        document.getElementById('hauptrundeSection').classList.remove('hidden');
         return;
       }
       
@@ -285,6 +463,8 @@
         opt.textContent = `${m.match} - ${m.team1} vs ${m.team2}${status}`;
         select.appendChild(opt);
       });
+      
+      document.getElementById('hauptrundeSection').classList.remove('hidden');
       
       select.onchange = () => {
         const idx = select.value;
@@ -297,7 +477,6 @@
       };
     }
 
-    // Show match details
     function showMatchDetails() {
       document.getElementById('team1Name').textContent = selectedMatch.team1;
       document.getElementById('team2Name').textContent = selectedMatch.team2;
@@ -309,7 +488,6 @@
       document.querySelectorAll('.score-btn').forEach(btn => btn.classList.remove('selected'));
     }
 
-    // Select score
     function selectScore(team, value, btn) {
       if (team === 1) {
         document.querySelectorAll('#team1Grid .score-btn').forEach(b => b.classList.remove('selected'));
@@ -321,8 +499,7 @@
       btn.classList.add('selected');
     }
 
-    // Submit score (via Apps Script)
-    async function submitScore() {
+    async function submitHauptrunde() {
       if (!selectedMatch) {
         showMessage('Bitte Match auswählen', 'error');
         return;
@@ -339,7 +516,7 @@
       try {
         const response = await fetch(SCRIPT_URL, {
           method: 'POST',
-          mode: 'no-cors', // Wichtig für Google Apps Script!
+          mode: 'no-cors',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             match: selectedMatch.match,
@@ -349,14 +526,13 @@
           })
         });
 
-        // no-cors = keine Response lesbar, aber Request wird gesendet
         showMessage(`✅ Score eingetragen: ${selectedMatch.team1} ${score1}:${score2} ${selectedMatch.team2}`, 'success');
         
         // Reset
         setTimeout(() => {
           document.getElementById('matchSelect').value = '';
           document.getElementById('matchDetails').classList.add('hidden');
-          loadMatches(); // Reload matches
+          loadMatchesForTeam();
         }, 2000);
         
       } catch (error) {
@@ -365,7 +541,6 @@
       }
     }
 
-    // Show message
     function showMessage(text, type = 'success') {
       const box = document.getElementById('messageBox');
       box.innerHTML = `<div class="message ${type}">${text}</div>`;
@@ -373,7 +548,7 @@
     }
 
     // Init
-    loadMatches();
+    loadTeams();
   </script>
 </body>
 </html>
