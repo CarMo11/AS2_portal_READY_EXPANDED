@@ -166,9 +166,66 @@
       gap: 10px;
       margin-bottom: 20px;
     }
+    .legs-input {
+      width: 100%;
+      padding: 20px;
+      font-size: 24px;
+      text-align: center;
+      border: 2px solid #39424d;
+      border-radius: 12px;
+      background: #1a1d24;
+      color: #00dca6;
+      font-weight: 700;
+      margin-bottom: 20px;
+    }
+    .legs-input:focus {
+      outline: none;
+      border-color: #00dca6;
+      box-shadow: 0 0 0 4px rgba(0,220,166,0.2);
+    }
+    .back-btn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 12px 24px;
+      background: rgba(57,66,77,0.5);
+      border: 2px solid #39424d;
+      border-radius: 12px;
+      color: #9fb0c3;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .back-btn:hover {
+      background: rgba(57,66,77,0.8);
+      border-color: #00dca6;
+      color: #00dca6;
+    }
+    .run-info {
+      background: rgba(0,220,166,0.1);
+      border: 2px solid rgba(0,220,166,0.3);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 20px;
+      text-align: center;
+      font-size: 16px;
+      font-weight: 600;
+      color: #00dca6;
+    }
+    .skip-info {
+      text-align: center;
+      font-size: 12px;
+      color: #9fb0c3;
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
+  <a href="/monitor.html" class="back-btn">📊 Zum Live-Monitor</a>
+  
   <div class="container">
     <div class="header">
       <h1>🎯 AS2 Score-Eingabe</h1>
@@ -192,9 +249,13 @@
 
       <!-- VORRUNDE: Legs eintragen -->
       <div id="vorrundeSection" class="hidden">
-        <div class="label">2. Legs eintragen (Lauf {{ currentRun }})</div>
-        <div class="legs-grid" id="legsGrid"></div>
+        <div id="runInfo" class="run-info"></div>
+        <div class="label">2. Legs eintragen (Minimum: 3 Legs)</div>
+        <input type="number" id="legsInput" class="legs-input" placeholder="z.B. 12" min="3" max="99" />
         <button class="submit-btn" onclick="submitVorrunde()">✅ Legs eintragen</button>
+        <div class="skip-info">
+          💡 Du kannst jederzeit zurückkommen und weitere Läufe eintragen
+        </div>
       </div>
 
       <!-- HAUPTRUNDE: Match + Score -->
@@ -249,7 +310,6 @@
     let matches = [];
     let selectedTeam = null;
     let selectedMatch = null;
-    let selectedLegs = null;
     let score1 = null;
     let score2 = null;
 
@@ -330,37 +390,72 @@
       };
     }
 
-    // VORRUNDE: Legs-Eingabe anzeigen
-    function showVorrundeInput() {
-      const grid = document.getElementById('legsGrid');
-      grid.innerHTML = '';
-      
-      // Legs 7-14
-      for (let i = 7; i <= 14; i++) {
-        const btn = document.createElement('button');
-        btn.className = 'score-btn';
-        btn.textContent = i;
-        btn.onclick = () => selectLegs(i, btn);
-        grid.appendChild(btn);
+    // VORRUNDE: Legs-Eingabe anzeigen mit aktuellem Lauf
+    async function showVorrundeInput() {
+      try {
+        // Aktuellen Stand des Teams aus Sheet laden
+        const res = await fetch(SHEET_URL_VORRUNDE_EINGABE + '&_=' + Date.now());
+        const data = await res.text();
+        const rows = parseCSV(data);
+        
+        let currentRun = 1;
+        let filledRuns = [];
+        
+        // Team-Zeile finden und bereits gefüllte Läufe zählen
+        for (let i = 1; i < rows.length; i++) {
+          if ((rows[i][0] || '').trim() === selectedTeam) {
+            // Spalten C-H = Leg 1-6 (Index 2-7)
+            for (let col = 2; col <= 7; col++) {
+              const val = (rows[i][col] || '').trim();
+              if (val && val !== '') {
+                filledRuns.push(col - 1); // 1-basiert
+                currentRun = col - 1; // aktueller gefüllter
+              }
+            }
+            currentRun++; // nächster freier Lauf
+            if (currentRun > 6) currentRun = 6; // max 6
+            break;
+          }
+        }
+        
+        // Run-Info anzeigen
+        const runInfo = document.getElementById('runInfo');
+        if (filledRuns.length === 6) {
+          runInfo.innerHTML = '✅ Alle 6 Läufe bereits eingetragen!<br><small>Du kannst trotzdem Werte korrigieren</small>';
+        } else if (filledRuns.length > 0) {
+          runInfo.innerHTML = `📊 Lauf ${currentRun} von 6<br><small>Bereits eingetragen: Lauf ${filledRuns.join(', ')}</small>`;
+        } else {
+          runInfo.innerHTML = `🎯 Lauf ${currentRun} von 6<br><small>Noch keine Läufe eingetragen</small>`;
+        }
+        
+        document.getElementById('vorrundeSection').classList.remove('hidden');
+        document.getElementById('legsInput').value = '';
+        document.getElementById('legsInput').focus();
+        
+      } catch (err) {
+        console.error(err);
+        const runInfo = document.getElementById('runInfo');
+        runInfo.innerHTML = '🎯 Vorrunde · Legs eintragen';
+        document.getElementById('vorrundeSection').classList.remove('hidden');
       }
-      
-      document.getElementById('vorrundeSection').classList.remove('hidden');
-      selectedLegs = null;
-    }
-
-    function selectLegs(value, btn) {
-      document.querySelectorAll('#legsGrid .score-btn').forEach(b => b.classList.remove('selected'));
-      btn.classList.add('selected');
-      selectedLegs = value;
     }
 
     async function submitVorrunde() {
       if (!selectedTeam) {
-        showMessage('Bitte Team auswählen', 'error');
+        showMessage('❌ Bitte Team auswählen', 'error');
         return;
       }
-      if (selectedLegs === null) {
-        showMessage('Bitte Legs auswählen', 'error');
+      
+      const legsInput = document.getElementById('legsInput');
+      const legs = parseInt(legsInput.value);
+      
+      if (!legs || legs < 3) {
+        showMessage('❌ Bitte mindestens 3 Legs eingeben', 'error');
+        return;
+      }
+      
+      if (legs > 99) {
+        showMessage('❌ Maximum 99 Legs', 'error');
         return;
       }
 
@@ -372,19 +467,23 @@
           body: JSON.stringify({
             mode: 'vorrunde',
             team: selectedTeam,
-            legs: selectedLegs
+            legs: legs
           })
         });
 
-        showMessage(`✅ ${selectedLegs} Legs für ${selectedTeam} eingetragen!`, 'success');
+        showMessage(`✅ ${legs} Legs für ${selectedTeam} eingetragen!`, 'success');
         
-        // Reset
-        selectedLegs = null;
-        document.querySelectorAll('#legsGrid .score-btn').forEach(b => b.classList.remove('selected'));
+        // Input leeren und neu laden
+        legsInput.value = '';
+        
+        // Run-Info aktualisieren
+        setTimeout(() => {
+          showVorrundeInput();
+        }, 1000);
         
       } catch (error) {
         console.error(error);
-        showMessage('Fehler beim Senden. Bitte nochmal versuchen.', 'error');
+        showMessage('❌ Fehler beim Senden. Bitte nochmal versuchen.', 'error');
       }
     }
 
