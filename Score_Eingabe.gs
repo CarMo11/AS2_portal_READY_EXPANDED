@@ -223,6 +223,19 @@ function handleHauptrunde(ss, data) {
     Logger.log('Score-Log Fehler (Hauptrunde): ' + err);
   }
 
+  // 🔄 LIVE-UPDATE: A/B-Tabelle automatisch neu berechnen
+  try {
+    if (group === 'A') {
+      recalcGroupA();  // Aus AS2 MASTER
+      Logger.log('✅ Gruppe A Tabelle automatisch aktualisiert');
+    } else if (group === 'B') {
+      recalcGroupB();  // Aus AS2 MASTER
+      Logger.log('✅ Gruppe B Tabelle automatisch aktualisiert');
+    }
+  } catch (err) {
+    Logger.log('⚠️ recalcGroup' + group + '() Fehler: ' + err);
+  }
+
   return jsonResponse(true, 'Hauptrunden-Score gespeichert.', {
     group: group,
     match: matchStr
