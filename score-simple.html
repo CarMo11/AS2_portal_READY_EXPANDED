@@ -188,8 +188,8 @@
     const SHEET_URL_A = "https://docs.google.com/spreadsheets/d/11qd00fEEVDIWbXl8Rx6A0vvCD8WHK2FiiXVqaxtuKDk/gviz/tq?tqx=out:csv&sheet=A%20%E2%80%93%20Ergebnisse";
     const SHEET_URL_B = "https://docs.google.com/spreadsheets/d/11qd00fEEVDIWbXl8Rx6A0vvCD8WHK2FiiXVqaxtuKDk/gviz/tq?tqx=out:csv&sheet=B%20%E2%80%93%20Ergebnisse";
     
-    // Google Form URL (MUSS VON DIR ERSTELLT WERDEN!)
-    const FORM_URL = "https://docs.google.com/forms/d/e/YOUR_FORM_ID/formResponse";
+    // Google Apps Script Web-App URL (siehe SETUP-SCORE-EINGABE.md)
+    const SCRIPT_URL = "https://script.google.com/macros/s/DEINE_SCRIPT_ID_HIER/exec";
     
     let matches = [];
     let selectedMatch = null;
@@ -321,7 +321,7 @@
       btn.classList.add('selected');
     }
 
-    // Submit score (via Google Form)
+    // Submit score (via Apps Script)
     async function submitScore() {
       if (!selectedMatch) {
         showMessage('Bitte Match auswählen', 'error');
@@ -336,27 +336,33 @@
         return;
       }
 
-      // HIER MUSST DU DEIN GOOGLE FORM INTEGRIEREN!
-      // Option 1: Google Form direkt öffnen (am einfachsten)
-      const formData = new URLSearchParams({
-        // entry.XXX = Google Form Feld-IDs (musst du aus dem Form rauskopieren)
-        'entry.1234567': selectedMatch.match, // Match
-        'entry.2345678': selectedMatch.group, // Gruppe
-        'entry.3456789': selectedMatch.team1, // Team 1
-        'entry.4567890': selectedMatch.team2, // Team 2
-        'entry.5678901': score1, // Score Team 1
-        'entry.6789012': score2  // Score Team 2
-      });
+      try {
+        const response = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors', // Wichtig für Google Apps Script!
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            match: selectedMatch.match,
+            group: selectedMatch.group,
+            score1: score1,
+            score2: score2
+          })
+        });
 
-      // Für JETZT: Zeige einfach eine Meldung
-      showMessage(`✅ Score würde eingetragen: ${selectedMatch.team1} ${score1}:${score2} ${selectedMatch.team2}`, 'success');
-      
-      // Reset
-      setTimeout(() => {
-        document.getElementById('matchSelect').value = '';
-        document.getElementById('matchDetails').classList.add('hidden');
-        loadMatches(); // Reload matches
-      }, 2000);
+        // no-cors = keine Response lesbar, aber Request wird gesendet
+        showMessage(`✅ Score eingetragen: ${selectedMatch.team1} ${score1}:${score2} ${selectedMatch.team2}`, 'success');
+        
+        // Reset
+        setTimeout(() => {
+          document.getElementById('matchSelect').value = '';
+          document.getElementById('matchDetails').classList.add('hidden');
+          loadMatches(); // Reload matches
+        }, 2000);
+        
+      } catch (error) {
+        console.error(error);
+        showMessage('Fehler beim Senden. Bitte nochmal versuchen.', 'error');
+      }
     }
 
     // Show message
