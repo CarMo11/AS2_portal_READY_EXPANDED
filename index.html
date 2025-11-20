@@ -4,20 +4,20 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="google-site-verification" content="google9038f401d045ca32" />
-  <title>Dartturnier AS2 Hochberg (Remseck am Neckar) – Anmeldung 24.10.2025</title>
+  <title>Dartturnier AS2 Hochberg (Remseck am Neckar) – Anmeldung 29.11.2025</title>
   <meta name="description" content="Dartturnier im AS2 in Hochberg (Remseck/Neckarrems): 2er-Teams, 501 Double Out, Start 19:30. Anmeldung & Vorkasse online. AS2 Hochberg, Baden-Württemberg." />
   <meta name="keywords" content="Dartturnier, Darts, AS2 Hochberg, AS2 in Hochberg, Ristorante Adler, Adler Hochberg, Remseck, Neckarrems, Ludwigsburg, Baden-Württemberg, 501 Double Out, Dart Turnier" />
   
   <!-- Open Graph / Social Media -->
-  <meta property="og:title" content="AS2 Hochberg – Dartturnier (2er-Teams) 24.10.2025" />
+  <meta property="og:title" content="AS2 Hochberg – Dartturnier (2er-Teams) 29.11.2025" />
   <meta property="og:description" content="Dartturnier in Remseck/Neckarrems. Anmeldung & Vorkasse online." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://as2-dartturnier-hochberg.netlify.app" />
   <meta property="og:image" content="https://as2-dartturnier-hochberg.netlify.app/og-image.jpg" />
   <!-- Favicons -->
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%23e67e22'/><circle cx='50' cy='50' r='35' fill='%23fff'/><circle cx='50' cy='50' r='22' fill='%23e67e22'/><circle cx='50' cy='50' r='9' fill='%23c0392b'/></svg>" />
-  <link rel="icon" type="image/png" sizes="32x32" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%23e67e22'/><circle cx='50' cy='50' r='35' fill='%23fff'/><circle cx='50' cy='50' r='22' fill='%23e67e22'/><circle cx='50' cy='50' r='9' fill='%23c0392b'/></svg>" />
-  <link rel="apple-touch-icon" sizes="180x180" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%23e67e22'/><circle cx='50' cy='50' r='35' fill='%23fff'/><circle cx='50' cy='50' r='22' fill='%23e67e22'/><circle cx='50' cy='50' r='9' fill='%23c0392b'/></svg>" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.svg" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.svg" />
   
   <!-- Strukturierte Daten für Google Events -->
   <script type="application/ld+json">
@@ -25,8 +25,8 @@
     "@context": "https://schema.org",
     "@type": "SportsEvent",
     "name": "AS2 Hochberg – Dartturnier (2er-Teams)",
-    "startDate": "2025-10-24T19:30:00+02:00",
-    "endDate": "2025-10-24T23:59:00+02:00",
+    "startDate": "2025-11-29T19:30:00+01:00",
+    "endDate": "2025-11-29T23:59:00+01:00",
     "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
     "eventStatus": "https://schema.org/EventScheduled",
     "description": "Dartturnier in Remseck am Neckar / Neckarrems im AS2 (am Ristorante Adler): 2er-Teams, 501 Double Out, Vorrunde & Hauptrunde. Anmeldung online, Vorkasse bevorzugt.",
@@ -71,8 +71,8 @@
         </a>
       </div>
       <h1>AS2 Hochberg Dartturnier</h1>
-      <p class="sub">📅 Fr., 24.10.2025 · 19:30 Uhr · 📍 Remseck (Hochberg)</p>
-      <p class="pill">💰 30€ / Team · Max. 10 Teams · 🎯 501 DO</p>
+      <p class="sub">📅 Fr., 29.11.2025 · 19:30 Uhr · 📍 Remseck (Hochberg)</p>
+      <p class="pill">💰 30€ / Team · Freie Plätze · 🎯 501 DO</p>
       <div class="cta">
         <a href="https://docs.google.com/forms/d/e/1FAIpQLSfz45P5c-TW1vVuA8W1kA570_jy0pWzqZzySURgHNgpEso-NA/viewform?usp=dialog" target="_blank" rel="noopener" class="btn">Jetzt anmelden</a>
         <a href="monitor.html" class="btn" style="background:linear-gradient(90deg,var(--brand),var(--brand2));border-color:var(--brand2)">🎯 Live-Scoring</a>
@@ -286,11 +286,9 @@
         
         // Stats aktualisieren
         const totalCount = paidTeams.length + openTeams.length;
-        const maxTeams = 10; // Maximale Teamanzahl
-        const free = Math.max(0, maxTeams - totalCount);
         
-        elCount.textContent = totalCount; // GESAMT-Anmeldungen (wie vorher)
-        elFree.textContent = free;
+        elCount.textContent = totalCount; // GESAMT-Anmeldungen
+        elFree.textContent = '∞'; // Keine Begrenzung mehr
         elOpen.textContent = openTeams.length;
         
         // Bezahlte Teams anzeigen
